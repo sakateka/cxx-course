@@ -30,30 +30,10 @@ public:
     radix = b;
     precision = c;
   }
-  PNumber(std::string n, std::string b, std::string c) {
-    char *nend;
-    radix = strtoul(b.c_str(), &nend, 10);
-    if (*nend != '\0' or radix < 2) {
-      throw invalid_radix(b);
-    }
-    precision = strtoul(c.c_str(), &nend, 10);
-    if (*nend != '\0') {
-      throw invalid_precision(c);
-    }
-    number = strtol(n.c_str(), &nend, radix);
-    if (*nend == '.' and nend > n.c_str() and nend < (n.c_str() + n.size())) {
-      double fractional = strtol(++nend, &nend, radix);
-      if (*nend == '\0') {
-        int flog = log2(fractional);
-        while (flog-- > 0) {
-          fractional /= 10;
-        }
-        number += fractional;
-      }
-    }
-    if (*nend != '\0') {
-      throw invalid_pnumber(n);
-    }
+  PNumber(const std::string &n, const std::string &b, const std::string &c) {
+    SetRadix(parse_radix(b));
+    precision = parse_precision(c);
+    number = parse_number(n);
   }
   friend std::ostream &operator<<(std::ostream &out, const PNumber &p) {
     out << p.ToString();
@@ -73,37 +53,86 @@ public:
   }
   PNumber operator!() const { return {1.0 / number, radix, precision}; }
 
-  PNumber pow(const PNumber &rhs) const {
-    return {number * rhs.number, radix, precision};
-  }
-  PNumber pow() const { return {number * number, radix, precision}; }
+  PNumber pow2() const { return {number * number, radix, precision}; }
+
   double GetNumber() const { return number; }
-  std::string ToString() const { return "todo"; }
+  std::string ToString() const {
+    // XXX TODO
+    return "TODO";
+  }
   unsigned GetRadix() const { return radix; }
   std::string GetRadixAsStr() const { return std::to_string(radix); }
   unsigned GetPrecision() const { return precision; }
   std::string GetPrecisionAsStr() const { return std::to_string(precision); }
 
+  void SetRadix(unsigned r) {
+    if (r < 2) {
+      throw invalid_radix(std::to_string(r));
+    }
+    radix = r;
+  }
+  void SetRadixAsStr(const std::string &rs) { SetRadix(parse_radix(rs)); }
+  void SetPrecision(unsigned p) { precision = p; }
+  void SetPrecisionAsStr(const std::string &ps) {
+    precision = parse_precision(ps);
+  }
+
 private:
   double number;
   unsigned radix;
   unsigned precision;
+  unsigned parse_radix(const std::string &rs) const {
+    char *nend;
+    unsigned r = strtoul(rs.c_str(), &nend, 10);
+    if (*nend != '\0') {
+      throw invalid_radix(rs);
+    }
+    return r;
+  };
+  unsigned parse_precision(const std::string &ps) const {
+    char *nend;
+    unsigned p = strtoul(ps.c_str(), &nend, 10);
+    if (*nend != '\0') {
+      throw invalid_precision(ps);
+    }
+    return p;
+  }
+  double parse_number(const std::string &ns) const {
+    char *nend;
+    double n = strtol(ns.c_str(), &nend, radix);
+    if (*nend == '.' and nend > ns.c_str() and
+        nend < (ns.c_str() + ns.size())) {
+      double fractional = strtol(++nend, &nend, radix);
+      if (*nend == '\0') {
+        int flog = log2(fractional);
+        while (flog-- > 0) {
+          fractional /= 10;
+        }
+        n += fractional;
+      }
+    }
+    if (*nend != '\0') {
+      throw invalid_pnumber(ns);
+    }
+    return n;
+  }
 };
 
 #ifdef RUN_TESTS
 #include "acutest.h"
 void test_pnumber_constructor() {
-  TEST_CHECK(PNumber(1, 2, 3).GetNumber() == 1);
-  TEST_CHECK(PNumber(1, 2, 3).GetRadix() == 2);
-  TEST_CHECK(PNumber(1, 2, 3).GetPrecision() == 3);
-
-  // TEST_CHECK_(PNumber(1, 2, 3).ToString() == "1", "to_string todo");
-  TEST_CHECK(PNumber(1, 2, 3).GetRadixAsStr() == "2");
-  TEST_CHECK(PNumber(1, 2, 3).GetPrecisionAsStr() == "3");
+  {
+    PNumber p = PNumber(11.3, 16, 1);
+    TEST_CHECK(p.GetNumber() == 11.3);
+    TEST_CHECK(p.GetRadix() == 16);
+    TEST_CHECK(p.GetPrecision() == 1);
+  }
 
   {
     PNumber p = PNumber("11", "2", "3");
-    TEST_CHECK_(p.GetNumber() == 3, "p.GetNumber == %.1lf", p.GetNumber());
+    if (not TEST_CHECK(p.GetNumber() == 3.0)) {
+      TEST_MSG("GetNumber() == %.1lf", p.GetNumber());
+    }
     TEST_CHECK(p.GetRadixAsStr() == "2");
     TEST_CHECK(p.GetPrecisionAsStr() == "3");
   }
