@@ -173,11 +173,11 @@ void test_pnumber_constructor() {
 }
 
 void test_pnumber_constructor_exception() {
-  TEST_CATCH(PNumber(".0", "2", "3"), invalid_pnumber);
-  TEST_CATCH(PNumber(".0", "1", "3"), invalid_radix);
-  TEST_CATCH(PNumber("1y1", "3", "3"), invalid_pnumber);
-  TEST_CATCH(PNumber("13", "3y", "3"), invalid_radix);
-  TEST_CATCH(PNumber("13", "3", "3y"), invalid_precision);
+  TEST_CATCH_EXC(PNumber(".0", "2", "3"), invalid_pnumber);
+  TEST_CATCH_EXC(PNumber(".0", "1", "3"), invalid_radix);
+  TEST_CATCH_EXC(PNumber("1y1", "3", "3"), invalid_pnumber);
+  TEST_CATCH_EXC(PNumber("13", "3y", "3"), invalid_radix);
+  TEST_CATCH_EXC(PNumber("13", "3", "3y"), invalid_precision);
 }
 void test_pnumber_setters() {
   {
@@ -190,8 +190,8 @@ void test_pnumber_setters() {
     TEST_CHECK(p.GetRadix() == 8);
 
     // exceptions
-    TEST_CATCH(p.SetRadix(1), invalid_radix);
-    TEST_CATCH(p.SetRadix(17), invalid_radix);
+    TEST_CATCH_EXC(p.SetRadix(1), invalid_radix);
+    TEST_CATCH_EXC(p.SetRadix(17), invalid_radix);
   }
 
   {
