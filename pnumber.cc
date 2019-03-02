@@ -33,7 +33,7 @@ public:
   PNumber(const std::string &n, const std::string &b, const std::string &c) {
     SetRadix(parse_radix(b));
     precision = parse_precision(c);
-    number = parse_number(n);
+    number = parse_number(n, radix);
   }
   friend std::ostream &operator<<(std::ostream &out, const PNumber &p) {
     out << p.ToString();
@@ -97,9 +97,9 @@ private:
     }
     return p;
   }
-  double parse_number(const std::string &ns) const {
+  double parse_number(const std::string &ns, unsigned base) const {
     char *nend;
-    double n = strtol(ns.c_str(), &nend, radix);
+    double n = strtol(ns.c_str(), &nend, base);
     if (*nend == '.' and nend > ns.c_str() and
         nend < (ns.c_str() + ns.size())) {
       double fractional = strtol(++nend, &nend, radix);
