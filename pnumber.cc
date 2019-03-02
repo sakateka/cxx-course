@@ -57,8 +57,20 @@ public:
 
   double GetNumber() const { return number; }
   std::string ToString() const {
-    // XXX TODO
-    return "TODO";
+    std::string result;
+    unsigned n = (unsigned)number;
+    result = to_base(n, radix);
+    double fdouble = (number - n);
+    if (fdouble > 0) {
+      result.push_back('.');
+      int flog = log2(n);
+      while (flog-- > 0) {
+        fdouble *= 10;
+      }
+      unsigned f = (unsigned)fdouble;
+      result += to_base(f, radix);
+    }
+    return result;
   }
   unsigned GetRadix() const { return radix; }
   std::string GetRadixAsStr() const { return std::to_string(radix); }
@@ -66,7 +78,7 @@ public:
   std::string GetPrecisionAsStr() const { return std::to_string(precision); }
 
   void SetRadix(unsigned r) {
-    if (r < 2) {
+    if (r < 2 or r > 16) {
       throw invalid_radix(std::to_string(r));
     }
     radix = r;
@@ -116,6 +128,15 @@ private:
     }
     return n;
   }
+  std::string to_base(unsigned int n, unsigned int base) const {
+    static const char alphabet[] = "0123456789ABCDEF";
+    std::string result;
+    while (n) {
+      result += alphabet[n % base];
+      n /= base;
+    }
+    return std::string(result.rbegin(), result.rend());
+  }
 };
 
 #ifdef RUN_TESTS
@@ -158,9 +179,55 @@ void test_pnumber_constructor_exception() {
   TEST_CATCH(PNumber("13", "3y", "3"), invalid_radix);
   TEST_CATCH(PNumber("13", "3", "3y"), invalid_precision);
 }
+void test_pnumber_setters() {
+  {
+    PNumber p = PNumber("100.", "2", "3");
+    p.SetRadix(16);
+    TEST_CHECK(p.GetRadix() == 16);
+    TEST_CHECK(p.GetRadixAsStr() == "16");
+
+    p.SetRadixAsStr("8");
+    TEST_CHECK(p.GetRadix() == 8);
+
+    // exceptions
+    TEST_CATCH(p.SetRadix(1), invalid_radix);
+    TEST_CATCH(p.SetRadix(17), invalid_radix);
+  }
+
+  {
+    PNumber p = PNumber("100.", "2", "3");
+    p.SetPrecision(0);
+    TEST_CHECK(p.GetPrecision() == 0);
+    TEST_CHECK(p.GetPrecisionAsStr() == "0");
+  }
+}
+
+void test_pnumber_to_string() {
+  std::string s;
+  {
+    PNumber p = PNumber("FF.", "16", "3");
+    p.SetRadix(15);
+    s = p.ToString();
+    TEST_CHECK_(s == "120.000", "ToString == '%s'", s.c_str());
+    p.SetRadix(8);
+    s = p.ToString();
+    TEST_CHECK_(s == "377.000", "ToString == '%s'", s.c_str());
+  }
+  {
+    PNumber p = PNumber("F.F", "16", "3");
+    p.SetRadix(15);
+    s = p.ToString();
+    TEST_CHECK_(s == "10.100", "ToString == '%s'", s.c_str());
+    p.SetRadix(8);
+    s = p.ToString();
+    TEST_CHECK_(s == "17.170", "ToString == '%s'", s.c_str());
+  }
+}
 
 TEST_LIST = {
     {"pnumber_constructor", test_pnumber_constructor},
     {"pnumber_constructor-exception", test_pnumber_constructor_exception},
+    {"pnumber_setters", test_pnumber_setters},
+    {"pnumber_to_string", test_pnumber_to_string},
     {NULL, NULL}};
 #endif
