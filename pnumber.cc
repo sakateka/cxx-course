@@ -1,23 +1,24 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
+#include <iomanip>
 #include <iostream>
-#include <map>
-#include <set>
+#include <sstream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
-struct invalid_pnumber : public std::invalid_argument {
+class invalid_pnumber : public std::invalid_argument {
 public:
   explicit invalid_pnumber(const std::string &message)
       : std::invalid_argument(message) {}
 };
-struct invalid_radix : public std::invalid_argument {
+class invalid_radix : public std::invalid_argument {
 public:
   explicit invalid_radix(const std::string &message)
       : std::invalid_argument(message) {}
 };
-struct invalid_precision : public std::invalid_argument {
+class invalid_precision : public std::invalid_argument {
 public:
   explicit invalid_precision(const std::string &message)
       : std::invalid_argument(message) {}
@@ -56,26 +57,61 @@ public:
   PNumber pow2() const { return {number * number, radix, precision}; }
 
   double GetNumber() const { return number; }
-  std::string ToString() const {
-    std::string result;
-    unsigned n = (unsigned)number;
-    result = to_base(n, radix);
-    double fdouble = (number - n);
-    if (fdouble > 0) {
-      result.push_back('.');
-      int flog = log2(n);
-      while (flog-- > 0) {
-        fdouble *= 10;
-      }
-      unsigned f = (unsigned)fdouble;
-      result += to_base(f, radix);
-    }
-    return result;
-  }
   unsigned GetRadix() const { return radix; }
   std::string GetRadixAsStr() const { return std::to_string(radix); }
   unsigned GetPrecision() const { return precision; }
   std::string GetPrecisionAsStr() const { return std::to_string(precision); }
+
+  std::string ToString() const {
+    std::string result;
+    if (radix == 10) {
+      std::stringstream sresult(result);
+      sresult << std::fixed << std::setprecision(precision) << number;
+      return sresult.str();
+    }
+    static const char alphabet[] = "0123456789ABCDEF";
+    unsigned n = (unsigned)number;
+    double fdouble = (number - n);
+    while (n) {
+      result += alphabet[n % radix];
+      n /= radix;
+    }
+    std::reverse(result.begin(), result.end());
+
+    if (precision > 0) {
+      char fstring[17]; // 0.<double guaranteed precision 15 digits>
+      sprintf(fstring, "%.15f", fdouble);
+      std::string fs(fstring);
+      std::vector<int> fracVec;
+      transform(fs.begin() + 2 /*skip 0.*/, fs.end(),
+                std::back_inserter(fracVec),
+                [](unsigned char c) -> int { return c - '0'; });
+
+      fs.clear();
+      fs.resize(precision, '0');
+      for (unsigned i = 0;
+           std::count(fracVec.begin(), fracVec.end(), 0) && i < precision;
+           i++) {
+        int carry = 0;
+
+        for (int j = fracVec.size() - 1; j >= 0; j--) {
+          int digit = fracVec[j] * radix + carry;
+
+          if (digit > 9) {
+            carry = digit / 10;
+            digit %= 10;
+          } else {
+            carry = 0;
+          }
+
+          fracVec[j] = digit;
+        }
+        fs[i] = alphabet[carry];
+      }
+      result += '.' + fs;
+    }
+    return result;
+  }
 
   void SetRadix(unsigned r) {
     if (r < 2 or r > 16) {
@@ -112,30 +148,17 @@ private:
   double parse_number(const std::string &ns, unsigned base) const {
     char *nend;
     double n = strtol(ns.c_str(), &nend, base);
-    if (*nend == '.' and nend > ns.c_str() and
-        nend < (ns.c_str() + ns.size())) {
-      double fractional = strtol(++nend, &nend, radix);
+    if (*nend == '.' && *(++nend) != '\0') {
+      char *dot = nend;
+      double fractional = strtol(nend, &nend, radix);
       if (*nend == '\0') {
-        int flog = log2(fractional);
-        while (flog-- > 0) {
-          fractional /= 10;
-        }
-        n += fractional;
+        n += fractional / (double)pow(base, nend - dot);
       }
     }
     if (*nend != '\0') {
       throw invalid_pnumber(ns);
     }
     return n;
-  }
-  std::string to_base(unsigned int n, unsigned int base) const {
-    static const char alphabet[] = "0123456789ABCDEF";
-    std::string result;
-    while (n) {
-      result += alphabet[n % base];
-      n /= base;
-    }
-    return std::string(result.rbegin(), result.rend());
   }
 };
 
@@ -160,8 +183,8 @@ void test_pnumber_constructor() {
 
   {
     PNumber p = PNumber("11.11", "2", "3");
-    if (not TEST_CHECK(p.GetNumber() == 3.3)) {
-      TEST_MSG("GetNumber() == %.1lf", p.GetNumber());
+    if (not TEST_CHECK(p.GetNumber() == 3.75)) {
+      TEST_MSG("GetNumber() == %lf", p.GetNumber());
     }
   }
   {
@@ -173,7 +196,6 @@ void test_pnumber_constructor() {
 }
 
 void test_pnumber_constructor_exception() {
-  TEST_CATCH_EXC(PNumber(".0", "2", "3"), invalid_pnumber);
   TEST_CATCH_EXC(PNumber(".0", "1", "3"), invalid_radix);
   TEST_CATCH_EXC(PNumber("1y1", "3", "3"), invalid_pnumber);
   TEST_CATCH_EXC(PNumber("13", "3y", "3"), invalid_radix);
@@ -212,15 +234,27 @@ void test_pnumber_to_string() {
     p.SetRadix(8);
     s = p.ToString();
     TEST_CHECK_(s == "377.000", "ToString == '%s'", s.c_str());
+    p.SetRadix(10);
+    s = p.ToString();
+    TEST_CHECK_(s == "255.000", "ToString == '%s'", s.c_str());
+    p.SetRadix(2);
+    s = p.ToString();
+    TEST_CHECK_(s == "11111111.000", "ToString == '%s'", s.c_str());
   }
   {
     PNumber p = PNumber("F.F", "16", "3");
+    TEST_CHECK_(p.GetNumber() == 15.9375, "GetNumber == %.3f", p.GetNumber());
+    s = p.ToString();
+    TEST_CHECK_(s == "F.F00", "ToString == '%s'", s.c_str());
     p.SetRadix(15);
     s = p.ToString();
-    TEST_CHECK_(s == "10.100", "ToString == '%s'", s.c_str());
+    TEST_CHECK_(s == "10.E0E", "ToString == '%s'", s.c_str());
     p.SetRadix(8);
     s = p.ToString();
-    TEST_CHECK_(s == "17.170", "ToString == '%s'", s.c_str());
+    TEST_CHECK_(s == "17.740", "ToString == '%s'", s.c_str());
+    p.SetRadix(2);
+    s = p.ToString();
+    TEST_CHECK_(s == "1111.111", "ToString == '%s'", s.c_str());
   }
 }
 
