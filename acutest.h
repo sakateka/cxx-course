@@ -81,42 +81,54 @@
 #define TEST_CHECK_(cond,...)   test_check__((cond), __FILE__, __LINE__, __VA_ARGS__)
 #define TEST_CHECK(cond)        test_check__((cond), __FILE__, __LINE__, "%s", #cond)
 
-/* Macros to verify that the code throws an exception.  The exception type
- * its passed as the second argument. TEST_CATCH_EXC_ behaves like TEST_CHECK_
- * accept additional arguments for formatting the error message.
- *
- *   TEST_CATCH_EXC(function_that_throw(), ExceptionType);
- *
- * If the function_that_throw throws ExceptionType, the test passes
- */
 #ifdef __cplusplus
-#define TEST_CATCH_EXC(code, exctype)                                          \
+/* Macros to verify that the code (the 1st argument) throws exception of given
+ * type (the 2nd argument). (Note these macros are only available in C++.)
+ *
+ * TEST_EXCEPTION_ is like TEST_EXCEPTION but accepts custom printf-like
+ * message.
+ *
+ * For example:
+ *
+ *   TEST_EXCEPTION(function_that_throw(), ExpectedExceptionType);
+ *
+ * If the function_that_throw() throws ExpectedExceptionType, the check passes.
+ * If the function throws anything incompatible with ExpectedExceptionType
+ * (or if it does not thrown an exception at all), the check fails.
+ */
+#define TEST_EXCEPTION(code, exctype)                                          \
     do {                                                                       \
         bool exc_ok__ = false;                                                 \
-        const char *msg = #code " throws " #exctype;                           \
+        const char *msg__ = NULL;                                              \
         try {                                                                  \
             code;                                                              \
-        } catch(const exctype &) {                                             \
+            msg__ = "No exception thrown.";                                    \
+        } catch(exctype const&) {                                              \
             exc_ok__= true;                                                    \
         } catch(...) {                                                         \
-            msg = #code " threw not " #exctype;                                \
+            msg__ = "Unexpected exception thrown.";                            \
         }                                                                      \
-        test_check__(exc_ok__, __FILE__, __LINE__, msg);                       \
+        test_check__(exc_ok__, __FILE__, __LINE__, #code " throws " #exctype); \
+        if(msg__ != NULL)                                                      \
+            test_message__("%s", msg__);                                       \
     } while(0)
-#define TEST_CATCH_EXC_(code, exctype, fmt, ...)                               \
+#define TEST_EXCEPTION_(code, exctype, ...)                                    \
     do {                                                                       \
         bool exc_ok__ = false;                                                 \
-        const char *alt_fmt = fmt;                                             \
+        const char *msg__ = NULL;                                              \
         try {                                                                  \
             code;                                                              \
-        } catch(const exctype &) {                                             \
+            msg__ = "No exception thrown.";                                    \
+        } catch(exctype const&) {                                              \
             exc_ok__= true;                                                    \
         } catch(...) {                                                         \
-            alt_fmt = fmt " (threw not " #exctype ")";                         \
+            msg__ = "Unexpected exception thrown.";                            \
         }                                                                      \
-        test_check__(exc_ok__, __FILE__, __LINE__, alt_fmt, __VA_ARGS__);      \
+        test_check__(exc_ok__, __FILE__, __LINE__, __VA_ARGS__);               \
+        if(msg__ != NULL)                                                      \
+            test_message__("%s", msg__);                                       \
     } while(0)
-#endif
+#endif  /* #ifdef __cplusplus */
 
 
 /* Sometimes it is useful to split execution of more complex unit tests to some
