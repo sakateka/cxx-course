@@ -52,6 +52,8 @@ public:
   TPNumber operator/(const TPNumber &rhs) const {
     return {number / rhs.number, radix, precision};
   }
+  bool operator==(const TPNumber &rhs) const { return number == rhs.number; }
+  bool operator!=(const TPNumber &rhs) const { return number != rhs.number; }
   TPNumber operator!() const { return {1.0 / number, radix, precision}; }
 
   TPNumber pow2() const { return {number * number, radix, precision}; }
@@ -130,20 +132,26 @@ private:
   unsigned radix;
   unsigned precision;
   unsigned parse_radix(const std::string &rs) const {
-    char *nend;
-    unsigned r = strtoul(rs.c_str(), &nend, 10);
-    if (*nend != '\0') {
-      throw invalid_radix(rs);
+    if (rs.size() > 0 && rs[0] != '-') {
+      char *nend;
+      unsigned r = strtoul(rs.c_str(), &nend, 10);
+      if (*nend == '\0') {
+        return r;
+      }
     }
-    return r;
+    // negative or not fully parsed
+    throw invalid_radix(rs);
   };
   unsigned parse_precision(const std::string &ps) const {
-    char *nend;
-    unsigned p = strtoul(ps.c_str(), &nend, 10);
-    if (*nend != '\0') {
-      throw invalid_precision(ps);
+    if (ps.size() > 0 && ps[0] != '-') {
+      char *nend;
+      unsigned p = strtoul(ps.c_str(), &nend, 10);
+      if (*nend == '\0') {
+        return p;
+      }
     }
-    return p;
+    // negative or not fully parsed
+    throw invalid_precision(ps);
   }
   double parse_number(const std::string &ns, unsigned base) const {
     char *nend;
