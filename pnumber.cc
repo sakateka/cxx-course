@@ -32,9 +32,11 @@ class TPNumber {
 public:
   TPNumber(double n, unsigned b, unsigned c) {
     number = n;
-    radix = b;
+    radix = validate_radix(b);
     precision = c;
   }
+  static TPNumber default_() { return TPNumber(0, 10, 0); };
+
   TPNumber(const std::string &n, const std::string &b, const std::string &c) {
     SetRadix(parse_radix(b));
     precision = parse_precision(c);
@@ -47,15 +49,19 @@ public:
   TPNumber operator+(const TPNumber &rhs) const {
     return {number + rhs.number, radix, precision};
   }
+  void operator+=(const TPNumber &rhs) { number += rhs.number; }
   TPNumber operator-(const TPNumber &rhs) const {
     return {number - rhs.number, radix, precision};
   }
+  void operator-=(const TPNumber &rhs) { number -= rhs.number; }
   TPNumber operator*(const TPNumber &rhs) const {
     return {number * rhs.number, radix, precision};
   }
+  void operator*=(const TPNumber &rhs) { number *= rhs.number; }
   TPNumber operator/(const TPNumber &rhs) const {
     return {number / rhs.number, radix, precision};
   }
+  void operator/=(const TPNumber &rhs) { number /= rhs.number; }
   bool operator==(const TPNumber &rhs) const { return number == rhs.number; }
   bool operator!=(const TPNumber &rhs) const { return number != rhs.number; }
   TPNumber operator!() const { return {1.0 / number, radix, precision}; }
@@ -78,10 +84,10 @@ public:
     static const char alphabet[] = "0123456789ABCDEF";
     unsigned n = (unsigned)number;
     double fdouble = (number - n);
-    while (n) {
+    do {
       result += alphabet[n % radix];
       n /= radix;
-    }
+    } while (n);
     std::reverse(result.begin(), result.end());
 
     if (precision > 0) {
@@ -119,23 +125,20 @@ public:
     return result;
   }
 
-  void SetRadix(unsigned r) {
-    if (r < 2 or r > 16) {
-      throw invalid_radix(std::to_string(r));
-    }
-    radix = r;
-  }
+  void SetRadix(unsigned r) { radix = validate_radix(r); }
   void SetRadixAsStr(const std::string &rs) { SetRadix(parse_radix(rs)); }
   void SetPrecision(unsigned p) { precision = p; }
   void SetPrecisionAsStr(const std::string &ps) {
     precision = parse_precision(ps);
   }
 
-private:
-  double number;
-  unsigned radix;
-  unsigned precision;
-  unsigned parse_radix(const std::string &rs) const {
+  static unsigned validate_radix(unsigned r) {
+    if (r < 2 or r > 16) {
+      throw invalid_radix(std::to_string(r));
+    }
+    return r;
+  }
+  static unsigned parse_radix(const std::string &rs) {
     if (rs.size() > 0 && rs[0] != '-') {
       char *nend;
       unsigned r = strtoul(rs.c_str(), &nend, 10);
@@ -146,7 +149,7 @@ private:
     // negative or not fully parsed
     throw invalid_radix(rs);
   };
-  unsigned parse_precision(const std::string &ps) const {
+  static unsigned parse_precision(const std::string &ps) {
     if (ps.size() > 0 && ps[0] != '-') {
       char *nend;
       unsigned p = strtoul(ps.c_str(), &nend, 10);
@@ -157,12 +160,12 @@ private:
     // negative or not fully parsed
     throw invalid_precision(ps);
   }
-  double parse_number(const std::string &ns, unsigned base) const {
+  static double parse_number(const std::string &ns, unsigned base) {
     char *nend;
     double n = strtol(ns.c_str(), &nend, base);
     if (*nend == '.' && *(++nend) != '\0') {
       char *dot = nend;
-      double fractional = strtol(nend, &nend, radix);
+      double fractional = strtol(nend, &nend, base);
       if (*nend == '\0') {
         n += fractional / (double)pow(base, nend - dot);
       }
@@ -172,6 +175,11 @@ private:
     }
     return n;
   }
+
+private:
+  double number;
+  unsigned radix;
+  unsigned precision;
 };
 
 #ifdef RUN_TESTS
@@ -228,6 +236,7 @@ void test_pnumber_constructor() {
 
 void test_pnumber_constructor_exception() {
   TEST_CASE("ConstructorString mailformed string");
+  TEST_EXCEPTION(TPNumber(0, 1, 3), invalid_radix);
   TEST_EXCEPTION(TPNumber(".0", "1", "3"), invalid_radix);
   TEST_EXCEPTION(TPNumber("1y1", "3", "3"), invalid_pnumber);
   TEST_EXCEPTION(TPNumber("13", "3y", "3"), invalid_radix);
@@ -268,11 +277,39 @@ void test_pnumber_setters() {
 }
 
 void test_pnumber_to_string() {
+  TEST_CASE("TPNumber::default_()");
   {
-    string s;
+    TPNumber p = TPNumber::default_();
+    TEST_CHECK(p.ToString() == "0");
+    TEST_CHECK(p.GetRadix() == 10);
+  }
+  TEST_CASE("Zero");
+  {
+    for (int i = 2; i <= 16; i++) {
+      TEST_CASE_("TPNumber(0, %i, 0)", i);
+      TPNumber tmp = TPNumber(0, i, 0);
+      TEST_CHECK_(tmp.ToString() == "0", "'%s' == '0'", tmp.ToString().c_str());
+      TEST_CASE_("stringstream TPNumber(0, %i, 0)", i);
+      stringstream ss;
+      ss << tmp;
+      TEST_CHECK_(ss.str() == "0", "'%s' == '0'", ss.str().c_str());
+    }
+    for (int i = 2; i <= 16; i++) {
+      TEST_CASE_("TPNumber(0, %i, 1)", i);
+      TPNumber tmp = TPNumber(0, i, 1);
+      TEST_CHECK_(tmp.ToString() == "0.0", "'%s' == '0.0'",
+                  tmp.ToString().c_str());
+      TEST_CASE_("stringstream TPNumber(0, %i, 1)", i);
+      stringstream ss;
+      ss << tmp;
+      TEST_CHECK_(ss.str() == "0.0", "'%s' == '0.0'", ss.str().c_str());
+    }
+  }
+
+  {
     TPNumber p = TPNumber("FF.", "16", "3");
     p.SetRadix(15);
-    s = p.ToString();
+    string s = p.ToString();
     TEST_CHECK_(s == "120.000", "ToString == '%s'", s.c_str());
     stringstream ss("");
     ss << p;
@@ -323,6 +360,15 @@ void test_pnumber_operations() {
     TEST_CHECK(a == b and a.GetNumber() == b.GetNumber());
     a = TPNumber(1, 10, 3);
     TEST_CHECK(a != b and a.GetNumber() != b.GetNumber());
+  }
+
+  {
+    TEST_CASE("operator+=");
+    TPNumber a = TPNumber("F", "16", "3");
+    a += TPNumber("1", "10", "3");
+    if (not TEST_CHECK(a == TPNumber("10", "16", "3"))) {
+      TEST_MSG("a = %s", a.ToString().c_str());
+    }
   }
 
   TEST_CASE("operator+");
