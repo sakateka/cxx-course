@@ -33,7 +33,7 @@ public:
 
 class TPNumber {
 public:
-    TPNumber(double n, unsigned b, unsigned c) {
+    TPNumber(double n, int b, int c) {
         number = n;
         radix = validate_radix(b);
         precision = c;
@@ -92,13 +92,13 @@ public:
     double GetNumber() const {
         return number;
     }
-    unsigned GetRadix() const {
+    int GetRadix() const {
         return radix;
     }
     std::string GetRadixAsStr() const {
         return std::to_string(radix);
     }
-    unsigned GetPrecision() const {
+    int GetPrecision() const {
         return precision;
     }
     std::string GetPrecisionAsStr() const {
@@ -113,7 +113,7 @@ public:
             return sresult.str();
         }
         static const char alphabet[] = "0123456789ABCDEF";
-        unsigned n = (unsigned)number;
+        int n = (int)number;
         double fdouble = (number - n);
         do {
             result += alphabet[n % radix];
@@ -132,7 +132,7 @@ public:
 
             fs.clear();
             fs.resize(precision, '0');
-            for (unsigned i = 0;
+            for (int i = 0;
                  std::count(fracVec.begin(), fracVec.end(), 0) && i < precision;
                  i++) {
                 int carry = 0;
@@ -156,13 +156,13 @@ public:
         return result;
     }
 
-    void SetRadix(unsigned r) {
+    void SetRadix(int r) {
         radix = validate_radix(r);
     }
     void SetRadixAsStr(const std::string& rs) {
         SetRadix(parse_radix(rs));
     }
-    void SetPrecision(unsigned p) {
+    void SetPrecision(int p) {
         precision = p;
     }
     void SetPrecisionAsStr(const std::string& ps) {
@@ -170,16 +170,16 @@ public:
     }
 
 private:
-    static unsigned validate_radix(unsigned r) {
+    static int validate_radix(int r) {
         if (r < 2 or r > 16) {
             throw invalid_radix(std::to_string(r));
         }
         return r;
     }
-    static unsigned parse_radix(const std::string& rs) {
+    static int parse_radix(const std::string& rs) {
         if (rs.size() > 0 && rs[0] != '-') {
             char* nend;
-            unsigned r = strtoul(rs.c_str(), &nend, 10);
+            int r = strtol(rs.c_str(), &nend, 10);
             if (*nend == '\0') {
                 return r;
             }
@@ -187,10 +187,10 @@ private:
         // negative or not fully parsed
         throw invalid_radix(rs);
     };
-    static unsigned parse_precision(const std::string& ps) {
+    static int parse_precision(const std::string& ps) {
         if (ps.size() > 0 && ps[0] != '-') {
             char* nend;
-            unsigned p = strtoul(ps.c_str(), &nend, 10);
+            int p = strtol(ps.c_str(), &nend, 10);
             if (*nend == '\0') {
                 return p;
             }
@@ -198,7 +198,7 @@ private:
         // negative or not fully parsed
         throw invalid_precision(ps);
     }
-    static double parse_number(const std::string& ns, unsigned base) {
+    static double parse_number(const std::string& ns, int base) {
         char* nend;
         double n = strtol(ns.c_str(), &nend, base);
         if (*nend == '.' && *(++nend) != '\0') {
@@ -215,8 +215,8 @@ private:
     }
 
     double number;
-    unsigned radix;
-    unsigned precision;
+    int radix;
+    int precision;
 };
 
 #ifdef RUN_TESTS

@@ -15,12 +15,11 @@ enum struct TFunction { Revert,
 
 class TProc {
 public:
-    TProc(unsigned r, unsigned p) {
-        leftOpAndResult = TPNumber(0, r, p);
-        rightOp = TPNumber(0, r, p);
+    TProc(int r, int p) {
+        Reset(r, p);
     }
 
-    void Reset(unsigned r, unsigned p) {
+    void Reset(int r, int p) {
         leftOpAndResult = TPNumber(0, r, p);
         rightOp = TPNumber(0, r, p);
         operation = TOperation::None;
@@ -33,6 +32,8 @@ public:
         std::string op = "None";
         try {
             switch (operation) {
+                case TOperation::None:
+                    break;
                 case TOperation::Add:
                     op = "+";
                     leftOpAndResult += rightOp;
@@ -69,7 +70,7 @@ public:
                     rightOp = !rightOp;
                     break;
                 case TFunction::Sqr:
-                    fn = "sqr";
+                    fn = "Sqr";
                     rightOp = rightOp.Sqr();
                     break;
                 default:
