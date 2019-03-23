@@ -38,7 +38,7 @@ namespace NPNumber {
         TPNumber(double n, int b, int c) {
             number = n;
             radix = validate_radix(b);
-            precision = c;
+            precision = validate_precision(c);
         }
         static TPNumber default_() {
             return TPNumber(0, 10, 0);
@@ -84,7 +84,10 @@ namespace NPNumber {
             return number != rhs.number;
         }
         TPNumber operator!() const {
-            return {1.0 / number, radix, precision};
+            if (number == 0) {
+                throw std::runtime_error("Division by zero");
+            }
+            return {1 / number, radix, precision};
         }
 
         TPNumber Sqr() const {
@@ -108,52 +111,71 @@ namespace NPNumber {
         }
 
         std::string ToString() const {
-            std::string result;
-            if (radix == 10) {
-                std::stringstream sresult(result);
-                sresult << std::fixed << std::setprecision(precision) << number;
-                return sresult.str();
+            std::stringstream sresult;
+            sresult << std::fixed << std::setprecision(precision) << number;
+            std::string result = sresult.str();
+            if (radix == 10 || std::string(result).find("inf") != std::string::npos) {
+                return result;
             }
+            result.clear();
+
+            double positive_number = number < 0 ? -number : number;
+
             static const char alphabet[] = "0123456789ABCDEF";
-            int n = (int)number;
-            double fdouble = (number - n);
+            int tmpN = (int)positive_number;
+            double fdouble = (positive_number - (double)tmpN);
+            char fstring[17]; // 0.<double guaranteed precision 15 digits>
+            sprintf(fstring, "%.15f", fdouble);
+            std::string fs(fstring);
+            std::vector<int> fracVec;
+            transform(fs.begin() + 2 /*skip 0.*/, fs.end(),
+                      std::back_inserter(fracVec),
+                      [](char c) -> int { return (int)(c - '0'); });
+
+            fs.clear();
+            fs.resize(15, '0');
+            for (int i = 0;
+                 std::any_of(begin(fracVec), end(fracVec),
+                             [](int c) { return c != 0; }) &&
+                 i < 15;
+                 i++) {
+                int carry = 0;
+
+                for (int j = fracVec.size() - 1; j >= 0; j--) {
+                    int digit = fracVec[j] * radix + carry;
+                    carry = digit / 10;
+                    fracVec[j] = digit % 10;
+                }
+                fs[i] = alphabet[carry];
+            }
+            double carry = 0;
+            for (int i = 14; i >= precision; i--) {
+                carry = (double)(fs[i] - '0' + carry) >= (double)radix / 2.0 ? 1 : 0;
+            }
+            if (carry) {
+                for (int i = precision - 1; i >= 0; i--) {
+                    if (fs[i] == alphabet[radix - 1]) {
+                        fs[i] = '0';
+                    } else {
+                        fs[i] = alphabet[fs[i] - '0' + 1];
+                        carry = 0;
+                        break;
+                    }
+                }
+            }
+            tmpN += carry;
             do {
-                result += alphabet[n % radix];
-                n /= radix;
-            } while (n);
+                result += alphabet[tmpN % radix];
+                tmpN /= radix;
+            } while (tmpN);
             std::reverse(result.begin(), result.end());
 
+            if (number < 0) {
+                result = "-" + result;
+            }
             if (precision > 0) {
-                char fstring[17]; // 0.<double guaranteed precision 15 digits>
-                sprintf(fstring, "%.15f", fdouble);
-                std::string fs(fstring);
-                std::vector<int> fracVec;
-                transform(fs.begin() + 2 /*skip 0.*/, fs.end(),
-                          std::back_inserter(fracVec),
-                          [](unsigned char c) -> int { return c - '0'; });
-
-                fs.clear();
                 fs.resize(precision, '0');
-                for (int i = 0;
-                     std::count(fracVec.begin(), fracVec.end(), 0) && i < precision;
-                     i++) {
-                    int carry = 0;
-
-                    for (int j = fracVec.size() - 1; j >= 0; j--) {
-                        int digit = fracVec[j] * radix + carry;
-
-                        if (digit > 9) {
-                            carry = digit / 10;
-                            digit %= 10;
-                        } else {
-                            carry = 0;
-                        }
-
-                        fracVec[j] = digit;
-                    }
-                    fs[i] = alphabet[carry];
-                }
-                result += '.' + fs;
+                result += "." + fs;
             }
             return result;
         }
@@ -165,7 +187,7 @@ namespace NPNumber {
             SetRadix(parse_radix(rs));
         }
         void SetPrecision(int p) {
-            precision = p;
+            precision = validate_precision(p);
         }
         void SetPrecisionAsStr(const std::string& ps) {
             precision = parse_precision(ps);
@@ -178,15 +200,21 @@ namespace NPNumber {
             }
             return r;
         }
+        static int validate_precision(int p) {
+            if (p < 0) {
+                throw invalid_precision(std::to_string(p));
+            }
+            return p;
+        }
         static int parse_radix(const std::string& rs) {
             if (rs.size() > 0 && rs[0] != '-') {
                 char* nend;
                 int r = strtol(rs.c_str(), &nend, 10);
                 if (*nend == '\0') {
-                    return r;
+                    return validate_radix(r);
                 }
             }
-            // negative or not fully parsed
+            // failed to parse
             throw invalid_radix(rs);
         };
         static int parse_precision(const std::string& ps) {
@@ -194,10 +222,10 @@ namespace NPNumber {
                 char* nend;
                 int p = strtol(ps.c_str(), &nend, 10);
                 if (*nend == '\0') {
-                    return p;
+                    return validate_precision(p);
                 }
             }
-            // negative or not fully parsed
+            // failed to parse
             throw invalid_precision(ps);
         }
         static double parse_number(const std::string& ns, int base) {
@@ -286,6 +314,8 @@ void test_pnumber_constructor_exception() {
     TEST_CASE("ConstructorString missmatched radix");
     TEST_EXCEPTION(TPNumber("1F", "2", "3"), invalid_pnumber);
     TEST_CASE("ConstructorString negative radix and precision");
+    TEST_EXCEPTION(TPNumber(1, -2, 3), invalid_radix);
+    TEST_EXCEPTION(TPNumber(1, 2, -3), invalid_precision);
     TEST_EXCEPTION(TPNumber("1", "-2", "3"), invalid_radix);
     TEST_EXCEPTION(TPNumber("1", "2", "-3"), invalid_precision);
 }
@@ -305,6 +335,9 @@ void test_pnumber_setters() {
         TEST_EXCEPTION(p.SetRadix(1), invalid_radix);
         TEST_EXCEPTION(p.SetRadix(17), invalid_radix);
         TEST_EXCEPTION(p.SetRadix(-1), invalid_radix);
+        TEST_EXCEPTION(p.SetRadixAsStr("1"), invalid_radix);
+        TEST_EXCEPTION(p.SetRadixAsStr("17"), invalid_radix);
+        TEST_EXCEPTION(p.SetRadixAsStr("-1"), invalid_radix);
 
         p.SetRadixAsStr("8");
         TEST_CHECK(p.GetRadix() == 8);
@@ -316,6 +349,11 @@ void test_pnumber_setters() {
         p.SetPrecision(0);
         TEST_CHECK(p.GetPrecision() == 0);
         TEST_CHECK(p.GetPrecisionAsStr() == "0");
+        p.SetPrecisionAsStr("42");
+        TEST_CHECK(p.GetPrecision() == 42);
+        TEST_CHECK(p.GetPrecisionAsStr() == "42");
+        TEST_EXCEPTION(p.SetPrecision(-1), invalid_precision);
+        TEST_EXCEPTION(p.SetPrecisionAsStr("-2"), invalid_precision);
     }
 }
 
@@ -350,6 +388,7 @@ void test_pnumber_to_string() {
         }
     }
 
+    TEST_CASE("Positive");
     {
         TPNumber p = TPNumber("FF.", "16", "3");
         p.SetRadix(15);
@@ -369,27 +408,64 @@ void test_pnumber_to_string() {
         s = p.ToString();
         TEST_CHECK_(s == "11111111.000", "ToString == '%s'", s.c_str());
     }
+    TEST_CASE("With fraction");
     {
-        string s;
-        TPNumber p = TPNumber("F.F", "16", "3");
-        TEST_CHECK_(p.GetNumber() == 15.9375, "GetNumber == %.3f", p.GetNumber());
-        stringstream ss("");
-        p.SetRadix(10);
-        ss << p;
-        TEST_CHECK(ss.str() == "15.938"); // NOTE precision 3
+        struct Case {
+            double n;
+            int r;
+            int b;
+            string expect;
+        };
+        vector<Case> cases = {
+            {15.9375, 16, 4, "F.F000"},
+            {15.9375, 15, 4, "10.E0E1"},
+            {15.9375, 14, 4, "11.D1A7"},
+            {15.9375, 13, 4, "12.C259"},
+            {15.9375, 12, 4, "13.B300"},
+            {15.9375, 11, 4, "14.A349"},
+            {15.9375, 10, 4, "15.9375"},
+            {15.9375, 9, 4, "16.8384"},
+            {15.9375, 8, 4, "17.7400"},
+            {15.9375, 7, 4, "21.6364"},
+            {15.9375, 6, 4, "23.5343"},
+            {15.9375, 5, 4, "30.4321"},
+            {15.9375, 4, 4, "33.3300"},
+            {15.9375, 3, 4, "120.2211"},
+            {15.9375, 2, 4, "1111.1111"},
 
-        p.SetRadix(16);
-        s = p.ToString();
-        TEST_CHECK_(s == "F.F00", "ToString == '%s'", s.c_str());
-        p.SetRadix(15);
-        s = p.ToString();
-        TEST_CHECK_(s == "10.E0E", "ToString == '%s'", s.c_str());
-        p.SetRadix(8);
-        s = p.ToString();
-        TEST_CHECK_(s == "17.740", "ToString == '%s'", s.c_str());
-        p.SetRadix(2);
-        s = p.ToString();
-        TEST_CHECK_(s == "1111.111", "ToString == '%s'", s.c_str());
+            {42.55, 14, 8, "30.79B2B2B3"},
+            {42.55, 8, 8, "52.43146315"},
+            {42.47, 7, 8, "60.32013201"},
+            {11.3, 16, 1, "B.5"},
+            {63.984375, 8, 0, "100"},
+            {63.0, 8, 0, "77"},
+        };
+
+        TEST_CASE("Positive")
+        for (auto c : cases) {
+            TPNumber p = TPNumber(c.n, c.r, c.b);
+            if (not TEST_CHECK(p.ToString() == c.expect)) {
+                TEST_MSG("TPNumber(%f, %d, %d)-> %s != %s (expect)",
+                         c.n, c.r, c.b, p.ToString().c_str(), c.expect.c_str());
+            }
+        }
+        TEST_CASE("Negative")
+        for (auto c : cases) {
+            double n = -c.n;
+            string expect = "-" + c.expect;
+            TPNumber p = TPNumber(n, c.r, c.b);
+            if (not TEST_CHECK(p.ToString() == expect)) {
+                TEST_MSG("TPNumber(%f, %d, %d)-> %s != %s (expect)",
+                         c.n, c.r, c.b, p.ToString().c_str(), expect.c_str());
+            }
+        }
+    }
+    TEST_CASE("Infinity");
+    {
+        TPNumber n = TPNumber(numeric_limits<double>::infinity(), 2, 2);
+        TEST_CHECK(n.ToString() == "inf"); // inf^2
+        n = TPNumber(-numeric_limits<double>::infinity(), 2, 2);
+        TEST_CHECK(n.ToString() == "-inf"); // inf^2
     }
 }
 
