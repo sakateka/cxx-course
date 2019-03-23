@@ -12,212 +12,215 @@
 #include <string>
 #include <vector>
 
-class invalid_pnumber : public std::invalid_argument {
-public:
-    explicit invalid_pnumber(const std::string& message)
-        : std::invalid_argument(message) {
-    }
-};
-class invalid_radix : public std::invalid_argument {
-public:
-    explicit invalid_radix(const std::string& message)
-        : std::invalid_argument(message) {
-    }
-};
-class invalid_precision : public std::invalid_argument {
-public:
-    explicit invalid_precision(const std::string& message)
-        : std::invalid_argument(message) {
-    }
-};
+namespace NPNumber {
 
-class TPNumber {
-public:
-    TPNumber(double n, int b, int c) {
-        number = n;
-        radix = validate_radix(b);
-        precision = c;
-    }
-    static TPNumber default_() {
-        return TPNumber(0, 10, 0);
+    class invalid_pnumber : public std::invalid_argument {
+    public:
+        explicit invalid_pnumber(const std::string& message)
+            : std::invalid_argument(message) {
+        }
+    };
+    class invalid_radix : public std::invalid_argument {
+    public:
+        explicit invalid_radix(const std::string& message)
+            : std::invalid_argument(message) {
+        }
+    };
+    class invalid_precision : public std::invalid_argument {
+    public:
+        explicit invalid_precision(const std::string& message)
+            : std::invalid_argument(message) {
+        }
     };
 
-    TPNumber(const std::string& n, const std::string& b, const std::string& c) {
-        SetRadix(parse_radix(b));
-        precision = parse_precision(c);
-        number = parse_number(n, radix);
-    }
-    friend std::ostream& operator<<(std::ostream& out, const TPNumber& p) {
-        out << p.ToString();
-        return out;
-    }
-    TPNumber operator+(const TPNumber& rhs) const {
-        return {number + rhs.number, radix, precision};
-    }
-    void operator+=(const TPNumber& rhs) {
-        number += rhs.number;
-    }
-    TPNumber operator-(const TPNumber& rhs) const {
-        return {number - rhs.number, radix, precision};
-    }
-    void operator-=(const TPNumber& rhs) {
-        number -= rhs.number;
-    }
-    TPNumber operator*(const TPNumber& rhs) const {
-        return {number * rhs.number, radix, precision};
-    }
-    void operator*=(const TPNumber& rhs) {
-        number *= rhs.number;
-    }
-    TPNumber operator/(const TPNumber& rhs) const {
-        return {number / rhs.number, radix, precision};
-    }
-    void operator/=(const TPNumber& rhs) {
-        number /= rhs.number;
-    }
-    bool operator==(const TPNumber& rhs) const {
-        return number == rhs.number;
-    }
-    bool operator!=(const TPNumber& rhs) const {
-        return number != rhs.number;
-    }
-    TPNumber operator!() const {
-        return {1.0 / number, radix, precision};
-    }
-
-    TPNumber Sqr() const {
-        return {number * number, radix, precision};
-    }
-
-    double GetNumber() const {
-        return number;
-    }
-    int GetRadix() const {
-        return radix;
-    }
-    std::string GetRadixAsStr() const {
-        return std::to_string(radix);
-    }
-    int GetPrecision() const {
-        return precision;
-    }
-    std::string GetPrecisionAsStr() const {
-        return std::to_string(precision);
-    }
-
-    std::string ToString() const {
-        std::string result;
-        if (radix == 10) {
-            std::stringstream sresult(result);
-            sresult << std::fixed << std::setprecision(precision) << number;
-            return sresult.str();
+    class TPNumber {
+    public:
+        TPNumber(double n, int b, int c) {
+            number = n;
+            radix = validate_radix(b);
+            precision = c;
         }
-        static const char alphabet[] = "0123456789ABCDEF";
-        int n = (int)number;
-        double fdouble = (number - n);
-        do {
-            result += alphabet[n % radix];
-            n /= radix;
-        } while (n);
-        std::reverse(result.begin(), result.end());
+        static TPNumber default_() {
+            return TPNumber(0, 10, 0);
+        };
 
-        if (precision > 0) {
-            char fstring[17]; // 0.<double guaranteed precision 15 digits>
-            sprintf(fstring, "%.15f", fdouble);
-            std::string fs(fstring);
-            std::vector<int> fracVec;
-            transform(fs.begin() + 2 /*skip 0.*/, fs.end(),
-                      std::back_inserter(fracVec),
-                      [](unsigned char c) -> int { return c - '0'; });
+        TPNumber(const std::string& n, const std::string& b, const std::string& c) {
+            SetRadix(parse_radix(b));
+            precision = parse_precision(c);
+            number = parse_number(n, radix);
+        }
+        friend std::ostream& operator<<(std::ostream& out, const TPNumber& p) {
+            out << p.ToString();
+            return out;
+        }
+        TPNumber operator+(const TPNumber& rhs) const {
+            return {number + rhs.number, radix, precision};
+        }
+        void operator+=(const TPNumber& rhs) {
+            number += rhs.number;
+        }
+        TPNumber operator-(const TPNumber& rhs) const {
+            return {number - rhs.number, radix, precision};
+        }
+        void operator-=(const TPNumber& rhs) {
+            number -= rhs.number;
+        }
+        TPNumber operator*(const TPNumber& rhs) const {
+            return {number * rhs.number, radix, precision};
+        }
+        void operator*=(const TPNumber& rhs) {
+            number *= rhs.number;
+        }
+        TPNumber operator/(const TPNumber& rhs) const {
+            return {number / rhs.number, radix, precision};
+        }
+        void operator/=(const TPNumber& rhs) {
+            number /= rhs.number;
+        }
+        bool operator==(const TPNumber& rhs) const {
+            return number == rhs.number;
+        }
+        bool operator!=(const TPNumber& rhs) const {
+            return number != rhs.number;
+        }
+        TPNumber operator!() const {
+            return {1.0 / number, radix, precision};
+        }
 
-            fs.clear();
-            fs.resize(precision, '0');
-            for (int i = 0;
-                 std::count(fracVec.begin(), fracVec.end(), 0) && i < precision;
-                 i++) {
-                int carry = 0;
+        TPNumber Sqr() const {
+            return {number * number, radix, precision};
+        }
 
-                for (int j = fracVec.size() - 1; j >= 0; j--) {
-                    int digit = fracVec[j] * radix + carry;
+        double GetNumber() const {
+            return number;
+        }
+        int GetRadix() const {
+            return radix;
+        }
+        std::string GetRadixAsStr() const {
+            return std::to_string(radix);
+        }
+        int GetPrecision() const {
+            return precision;
+        }
+        std::string GetPrecisionAsStr() const {
+            return std::to_string(precision);
+        }
 
-                    if (digit > 9) {
-                        carry = digit / 10;
-                        digit %= 10;
-                    } else {
-                        carry = 0;
+        std::string ToString() const {
+            std::string result;
+            if (radix == 10) {
+                std::stringstream sresult(result);
+                sresult << std::fixed << std::setprecision(precision) << number;
+                return sresult.str();
+            }
+            static const char alphabet[] = "0123456789ABCDEF";
+            int n = (int)number;
+            double fdouble = (number - n);
+            do {
+                result += alphabet[n % radix];
+                n /= radix;
+            } while (n);
+            std::reverse(result.begin(), result.end());
+
+            if (precision > 0) {
+                char fstring[17]; // 0.<double guaranteed precision 15 digits>
+                sprintf(fstring, "%.15f", fdouble);
+                std::string fs(fstring);
+                std::vector<int> fracVec;
+                transform(fs.begin() + 2 /*skip 0.*/, fs.end(),
+                          std::back_inserter(fracVec),
+                          [](unsigned char c) -> int { return c - '0'; });
+
+                fs.clear();
+                fs.resize(precision, '0');
+                for (int i = 0;
+                     std::count(fracVec.begin(), fracVec.end(), 0) && i < precision;
+                     i++) {
+                    int carry = 0;
+
+                    for (int j = fracVec.size() - 1; j >= 0; j--) {
+                        int digit = fracVec[j] * radix + carry;
+
+                        if (digit > 9) {
+                            carry = digit / 10;
+                            digit %= 10;
+                        } else {
+                            carry = 0;
+                        }
+
+                        fracVec[j] = digit;
                     }
-
-                    fracVec[j] = digit;
+                    fs[i] = alphabet[carry];
                 }
-                fs[i] = alphabet[carry];
+                result += '.' + fs;
             }
-            result += '.' + fs;
+            return result;
         }
-        return result;
-    }
 
-    void SetRadix(int r) {
-        radix = validate_radix(r);
-    }
-    void SetRadixAsStr(const std::string& rs) {
-        SetRadix(parse_radix(rs));
-    }
-    void SetPrecision(int p) {
-        precision = p;
-    }
-    void SetPrecisionAsStr(const std::string& ps) {
-        precision = parse_precision(ps);
-    }
-
-private:
-    static int validate_radix(int r) {
-        if (r < 2 or r > 16) {
-            throw invalid_radix(std::to_string(r));
+        void SetRadix(int r) {
+            radix = validate_radix(r);
         }
-        return r;
-    }
-    static int parse_radix(const std::string& rs) {
-        if (rs.size() > 0 && rs[0] != '-') {
+        void SetRadixAsStr(const std::string& rs) {
+            SetRadix(parse_radix(rs));
+        }
+        void SetPrecision(int p) {
+            precision = p;
+        }
+        void SetPrecisionAsStr(const std::string& ps) {
+            precision = parse_precision(ps);
+        }
+
+    private:
+        static int validate_radix(int r) {
+            if (r < 2 or r > 16) {
+                throw invalid_radix(std::to_string(r));
+            }
+            return r;
+        }
+        static int parse_radix(const std::string& rs) {
+            if (rs.size() > 0 && rs[0] != '-') {
+                char* nend;
+                int r = strtol(rs.c_str(), &nend, 10);
+                if (*nend == '\0') {
+                    return r;
+                }
+            }
+            // negative or not fully parsed
+            throw invalid_radix(rs);
+        };
+        static int parse_precision(const std::string& ps) {
+            if (ps.size() > 0 && ps[0] != '-') {
+                char* nend;
+                int p = strtol(ps.c_str(), &nend, 10);
+                if (*nend == '\0') {
+                    return p;
+                }
+            }
+            // negative or not fully parsed
+            throw invalid_precision(ps);
+        }
+        static double parse_number(const std::string& ns, int base) {
             char* nend;
-            int r = strtol(rs.c_str(), &nend, 10);
-            if (*nend == '\0') {
-                return r;
+            double n = strtol(ns.c_str(), &nend, base);
+            if (*nend == '.' && *(++nend) != '\0') {
+                char* dot = nend;
+                double fractional = strtol(nend, &nend, base);
+                if (*nend == '\0') {
+                    n += fractional / (double)pow(base, nend - dot);
+                }
             }
+            if (*nend != '\0') {
+                throw invalid_pnumber(ns);
+            }
+            return n;
         }
-        // negative or not fully parsed
-        throw invalid_radix(rs);
+
+        double number;
+        int radix;
+        int precision;
     };
-    static int parse_precision(const std::string& ps) {
-        if (ps.size() > 0 && ps[0] != '-') {
-            char* nend;
-            int p = strtol(ps.c_str(), &nend, 10);
-            if (*nend == '\0') {
-                return p;
-            }
-        }
-        // negative or not fully parsed
-        throw invalid_precision(ps);
-    }
-    static double parse_number(const std::string& ns, int base) {
-        char* nend;
-        double n = strtol(ns.c_str(), &nend, base);
-        if (*nend == '.' && *(++nend) != '\0') {
-            char* dot = nend;
-            double fractional = strtol(nend, &nend, base);
-            if (*nend == '\0') {
-                n += fractional / (double)pow(base, nend - dot);
-            }
-        }
-        if (*nend != '\0') {
-            throw invalid_pnumber(ns);
-        }
-        return n;
-    }
-
-    double number;
-    int radix;
-    int precision;
-};
+}; // namespace NPNumber
 
 #ifdef RUN_TESTS
 #include "acutest.h"
@@ -227,6 +230,7 @@ using namespace std;
 // Constructors
 //
 void test_pnumber_constructor() {
+    using namespace NPNumber;
     {
         TEST_CASE("ConstructorNumber");
         TPNumber p = TPNumber(11.3, 16, 1);
@@ -272,6 +276,7 @@ void test_pnumber_constructor() {
 }
 
 void test_pnumber_constructor_exception() {
+    using namespace NPNumber;
     TEST_CASE("ConstructorString mailformed string");
     TEST_EXCEPTION(TPNumber(0, 1, 3), invalid_radix);
     TEST_EXCEPTION(TPNumber(".0", "1", "3"), invalid_radix);
@@ -289,6 +294,7 @@ void test_pnumber_constructor_exception() {
 // Methods
 //
 void test_pnumber_setters() {
+    using namespace NPNumber;
     TEST_CASE("Radix");
     {
         TPNumber p = TPNumber("100.", "2", "3");
@@ -314,6 +320,7 @@ void test_pnumber_setters() {
 }
 
 void test_pnumber_to_string() {
+    using namespace NPNumber;
     TEST_CASE("TPNumber::default_()");
     {
         TPNumber p = TPNumber::default_();
@@ -387,6 +394,7 @@ void test_pnumber_to_string() {
 }
 
 void test_pnumber_operations() {
+    using namespace NPNumber;
     TEST_CASE("operator== && operator!=");
     {
         TPNumber a = TPNumber("F", "16", "3");

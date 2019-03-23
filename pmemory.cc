@@ -10,54 +10,64 @@
 #include <string>
 #include <vector>
 
-class TMemory {
-public:
-    TMemory(unsigned radix, unsigned precision) {
-        number = TPNumber(0, radix, precision);
-    }
+namespace NMemory {
+    using TPNumber = NPNumber::TPNumber;
 
-    void Store(const TPNumber p) {
-        number = p;
-        state = true;
-    }
-    TPNumber Get() {
-        return number;
-    }
-    std::string GetAsStr() const {
-        return number.ToString();
-    }
+    class TMemory {
+    public:
+        TMemory(int radix, int precision) {
+            number = TPNumber(0, radix, precision);
+        }
 
-    void Add(const TPNumber& p) {
-        number += p;
-        state = true;
-    }
-    void Clear(unsigned radix, unsigned precision) {
-        number = TPNumber(0, radix, precision);
-        state = false;
-    }
-    bool GetState() {
-        return state;
-    }
-    std::string GetStateAsStr() {
-        return state ? "_On" : "_Off";
-    }
+        void Store(const TPNumber p) {
+            number = p;
+            state = true;
+        }
+        TPNumber Get() {
+            return number;
+        }
+        std::string GetAsStr() const {
+            return number.ToString();
+        }
 
-private:
-    TPNumber number = TPNumber::default_();
-    bool state = false;
-};
+        void Add(const TPNumber& p) {
+            number += p;
+            state = true;
+        }
+        void Clear(int radix, int precision) {
+            number = TPNumber(0, radix, precision);
+            state = false;
+        }
+        bool GetState() {
+            return state;
+        }
+        std::string GetStateAsStr() {
+            return state ? "_On" : "_Off";
+        }
+
+    private:
+        TPNumber number = TPNumber::default_();
+        bool state = false;
+    };
+}; // namespace NMemory
+
 #ifdef RUN_TESTS
 #include "acutest.h"
 using namespace std;
 
 void test_pmemory_constructor() {
+    using namespace NMemory;
+
     TMemory m = TMemory(2, 0);
     TEST_CHECK(m.Get().GetNumber() == 0);
     TEST_CHECK(m.GetStateAsStr() == "_Off");
-    TEST_EXCEPTION(TMemory(0, 0), invalid_radix);
+    TEST_EXCEPTION(TMemory(0, 0), NPNumber::invalid_radix);
 }
 
 void test_pmemory_operations() {
+    using namespace NMemory;
+    using TPNumber = NPNumber::TPNumber;
+
     TEST_CASE("Store");
     {
         TMemory m = TMemory(2, 0);
