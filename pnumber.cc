@@ -179,6 +179,13 @@ namespace NPNumber {
             }
             return result;
         }
+        std::string Repr() const {
+            std::stringstream sresult;
+            sresult << "TPNumber("
+                    << std::fixed << std::setprecision(precision) << number
+                    << ", " << radix << ", " << precision << ")";
+            return sresult.str();
+        }
 
         void SetRadix(int r) {
             radix = validate_radix(r);
@@ -445,8 +452,10 @@ void test_pnumber_to_string() {
         for (auto c : cases) {
             TPNumber p = TPNumber(c.n, c.r, c.b);
             if (not TEST_CHECK(p.ToString() == c.expect)) {
-                TEST_MSG("TPNumber(%f, %d, %d)-> %s != %s (expect)",
-                         c.n, c.r, c.b, p.ToString().c_str(), c.expect.c_str());
+                TEST_MSG("%s -> %s != %s (expect)",
+                         p.Repr().c_str(),
+                         p.ToString().c_str(),
+                         c.expect.c_str());
             }
         }
         TEST_CASE("Negative")
@@ -455,8 +464,10 @@ void test_pnumber_to_string() {
             string expect = "-" + c.expect;
             TPNumber p = TPNumber(n, c.r, c.b);
             if (not TEST_CHECK(p.ToString() == expect)) {
-                TEST_MSG("TPNumber(%f, %d, %d)-> %s != %s (expect)",
-                         c.n, c.r, c.b, p.ToString().c_str(), expect.c_str());
+                TEST_MSG("%s-> %s != %s (expect)",
+                         p.Repr().c_str(),
+                         p.ToString().c_str(),
+                         expect.c_str());
             }
         }
     }

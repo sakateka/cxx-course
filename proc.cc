@@ -121,7 +121,7 @@ namespace NProc {
 }; // namespace NProc
 
 #ifdef RUN_TESTS
-void test_proc_operations() {
+void test_proc_construction() {
     using namespace NProc;
     using TPNumber = NPNumber::TPNumber;
 
@@ -135,11 +135,9 @@ void test_proc_operations() {
         p2.Reset(2, 7); // reset to a state equal to p1
 
         TEST_CHECK(p1.GetLeftOpRes().GetRadix() == 2);
-        TEST_CHECK(p1.GetLeftOpRes().GetRadix() == p2.GetLeftOpRes().GetRadix());
-        TEST_CHECK(p1.GetRightOp().GetRadix() == p2.GetRightOp().GetRadix());
+        TEST_CHECK(p1.GetLeftOpRes().Repr() == p2.GetLeftOpRes().Repr());
         TEST_CHECK(p1.GetLeftOpRes().GetPrecision() == 7);
-        TEST_CHECK(p1.GetLeftOpRes().GetPrecision() == p2.GetLeftOpRes().GetPrecision());
-        TEST_CHECK(p1.GetRightOp().GetPrecision() == p2.GetRightOp().GetPrecision());
+        TEST_CHECK(p1.GetRightOp().Repr() == p2.GetRightOp().Repr());
         TEST_CHECK(p1.GetOperation() == TOperation::None);
         TEST_CHECK(p1.GetOperation() == p2.GetOperation());
         TEST_CHECK(p1.GetError() == "");
@@ -159,6 +157,11 @@ void test_proc_operations() {
         TEST_CHECK(p.GetRightOp().GetRadix() == 6);
         TEST_CHECK(p.GetRightOp().GetPrecision() == 18);
     }
+}
+void test_proc_functions() {
+    using namespace NProc;
+    using TPNumber = NPNumber::TPNumber;
+
     TEST_CASE("Functions");
     {
         TProc p = TProc(2, 2);

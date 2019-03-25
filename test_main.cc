@@ -19,5 +19,6 @@ TEST_LIST = {
     {"pmemory_constructor", test_pmemory_constructor},
     {"pmemory_operations", test_pmemory_operations},
     // TProc
-    {"proc_operations", test_proc_operations},
+    {"proc_constructor_and_operands", test_proc_construction},
+    {"proc_functions", test_proc_functions},
     {NULL, NULL}};
