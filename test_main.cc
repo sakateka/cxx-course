@@ -21,4 +21,5 @@ TEST_LIST = {
     // TProc
     {"proc_constructor_and_operands", test_proc_construction},
     {"proc_functions", test_proc_functions},
+    {"proc_operations", test_proc_operations},
     {NULL, NULL}};

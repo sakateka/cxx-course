@@ -32,6 +32,12 @@ namespace NPNumber {
             : std::invalid_argument(message) {
         }
     };
+    class division_by_zero : public std::invalid_argument {
+    public:
+        explicit division_by_zero(const std::string& message)
+            : std::invalid_argument(message) {
+        }
+    };
 
     class TPNumber {
     public:
@@ -72,9 +78,15 @@ namespace NPNumber {
             number *= rhs.number;
         }
         TPNumber operator/(const TPNumber& rhs) const {
+            if (rhs.number == 0) {
+                throw division_by_zero(Repr() + "/" + rhs.Repr());
+            }
             return {number / rhs.number, radix, precision};
         }
         void operator/=(const TPNumber& rhs) {
+            if (rhs.number == 0) {
+                throw division_by_zero(Repr() + "/" + rhs.Repr());
+            }
             number /= rhs.number;
         }
         bool operator==(const TPNumber& rhs) const {
@@ -85,7 +97,7 @@ namespace NPNumber {
         }
         TPNumber operator!() const {
             if (number == 0) {
-                throw std::runtime_error("Division by zero");
+                throw division_by_zero("1/" + Repr());
             }
             return {1 / number, radix, precision};
         }
@@ -536,6 +548,7 @@ void test_pnumber_operations() {
     // div negative first
     TEST_CHECK(
         (TPNumber("-4", "10", "3") / TPNumber("2", "10", "3")).GetNumber() == -2);
+    TEST_EXCEPTION(TPNumber(1, 2, 3) / TPNumber(0, 2, 2), division_by_zero);
 
     TEST_CASE("operator!");
     TEST_CHECK((!TPNumber("-4", "10", "3")).GetNumber() == 1.0 / -4);

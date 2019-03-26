@@ -55,6 +55,8 @@ namespace NProc {
                     default:
                         error = "'" + fn + "' - function not suppoerted";
                 }
+            } catch (const NPNumber::division_by_zero&) {
+                error = "Division by zero";
             } catch (const std::exception& e) {
                 error = "Function '" + fn + "' threw exception";
                 if (e.what() != NULL) {
@@ -97,6 +99,8 @@ namespace NProc {
                     default:
                         error = "Unsupported operation: '" + op + "'";
                 }
+            } catch (const NPNumber::division_by_zero&) {
+                error = "Division by zero";
             } catch (const std::exception& e) {
                 error = "Operation '" + op + "' threw exception";
                 if (e.what() != NULL) {
@@ -202,5 +206,72 @@ void test_proc_functions() {
         TEST_CHECK(p.GetRightOp().ToString() == "inf"); // inf^2
     }
 }
+void test_proc_operations() {
+    using namespace NProc;
+    using TPNumber = NPNumber::TPNumber;
+    TEST_CASE("Get/Set Operations");
+    {
+        TEST_CASE("Get/Set");
+        TProc p = TProc(4, 4);
+        TEST_CHECK(p.GetOperation() == TOperation::None);
+        p.SetOperation(TOperation::Add);
+        TEST_CHECK(p.GetOperation() == TOperation::Add);
+
+        TEST_CASE("Operation None NOP");
+        p.SetLeftOp(TPNumber(8, 2, 2));
+        p.SetRightOp(TPNumber(8, 2, 2));
+        p.OperationClear();
+        TEST_CHECK(p.GetOperation() == TOperation::None);
+        p.OperationRun();
+        TEST_CHECK(p.GetRightOp().Repr() == "TPNumber(8.00, 2, 2)");
+        TEST_CHECK(p.GetRightOp().Repr() == p.GetLeftOpRes().Repr());
+
+        TEST_CASE("Operation Add");
+        p.SetOperation(TOperation::Add);
+        p.OperationRun();
+        TEST_CHECK(p.GetLeftOpRes().Repr() == "TPNumber(16.00, 2, 2)");
+        TEST_CHECK(p.GetRightOp().Repr() == "TPNumber(8.00, 2, 2)");
+
+        TEST_CASE("Operation Sub");
+        p.SetOperation(TOperation::Sub);
+        p.OperationRun();
+        TEST_CHECK(p.GetRightOp().Repr() == p.GetLeftOpRes().Repr());
+        TEST_CHECK(p.GetRightOp().Repr() == "TPNumber(8.00, 2, 2)");
+
+        TEST_CASE("Operation Mul");
+        p.SetOperation(TOperation::Mul);
+        p.OperationRun();
+        TEST_CHECK(p.GetLeftOpRes().Repr() == "TPNumber(64.00, 2, 2)");
+        TEST_CHECK(p.GetRightOp().Repr() == "TPNumber(8.00, 2, 2)");
+
+        TEST_CASE("Operation Div");
+        p.SetOperation(TOperation::Div);
+        p.OperationRun();
+        TEST_CHECK(p.GetLeftOpRes().Repr() == "TPNumber(8.00, 2, 2)");
+        TEST_CHECK(p.GetRightOp().Repr() == "TPNumber(8.00, 2, 2)");
+        p.OperationRun();
+        TEST_CHECK(p.GetLeftOpRes().Repr() == "TPNumber(1.00, 2, 2)");
+        TEST_CHECK(p.GetRightOp().Repr() == "TPNumber(8.00, 2, 2)");
+        p.OperationRun();
+        TEST_CHECK(p.GetLeftOpRes().Repr() == "TPNumber(0.12, 2, 2)");
+        TEST_CHECK(p.GetRightOp().Repr() == "TPNumber(8.00, 2, 2)");
+        p.SetRightOp(p.GetLeftOpRes());
+        p.FunctionRun(TFunction::Revert);
+        TEST_CHECK(p.GetRightOp().Repr() == "TPNumber(8.00, 2, 2)");
+
+        p.SetRightOp(TPNumber(0, 2, 2));
+        p.OperationRun();
+        if (not TEST_CHECK(p.GetError().find("Division by zero") != string::npos)) {
+            if (p.GetError() == "") {
+                TEST_MSG("No error");
+            } else {
+                TEST_MSG("Unexpected error: %s", p.GetError().c_str());
+            }
+        }
+        p.ClearError();
+        TEST_CHECK(p.GetError() == "");
+    }
+}
+
 #endif // #ifdef RUN_TESTS
 #endif // #ifndef PROC_CC
