@@ -6,6 +6,7 @@
 #include "pmemory.cc"
 #include "pnumber.cc"
 #include "proc.cc"
+#include "complex.cc"
 
 // acutest provide main func
 TEST_LIST = {
@@ -22,4 +23,7 @@ TEST_LIST = {
     {"proc_constructor_and_operands", test_proc_construction},
     {"proc_functions", test_proc_functions},
     {"proc_operations", test_proc_operations},
+    // Complex
+    {"complex_constructor", test_complex_constructor},
+    {"complex_operations", test_complex_operations},
     {NULL, NULL}};
