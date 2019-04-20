@@ -17,8 +17,8 @@ namespace NComplex {
 
     class TComplex {
     public:
-        const double Real;
-        const double Imagn;
+        double Real;
+        double Imagn;
 
         TComplex(double r = 0, double i = 0)
             : Real(r)
@@ -36,6 +36,8 @@ namespace NComplex {
         }
 
         TComplex& operator=(const TComplex& rhs) {
+            Real = rhs.Real;
+            Imagn = rhs.Imagn;
             return *this;
         }
 
