@@ -15,8 +15,8 @@ namespace NMemory {
 
     class TMemory {
     public:
-        TMemory(int radix, int precision) {
-            number = TPNumber(0, radix, precision);
+        TMemory(int radix, int precision)
+            : number(TPNumber(0, radix, precision)) {
         }
 
         void Store(const TPNumber p) {
@@ -46,7 +46,7 @@ namespace NMemory {
         }
 
     private:
-        TPNumber number = TPNumber::default_();
+        TPNumber number;
         bool state = false;
     };
 }; // namespace NMemory

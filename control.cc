@@ -6,6 +6,9 @@
 #include "pnumber.cc"
 
 namespace NCtrl {
+    using TMemory = NMemory::TMemory;
+    using TPNumber = NPNumber::TPNumber;
+
     enum struct TCtrlState { CStart,
                              CEditing,
                              FunDone,
