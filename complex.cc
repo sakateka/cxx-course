@@ -13,7 +13,7 @@ namespace NComplex {
             : std::invalid_argument(message) {
         }
     };
-    static const char* Delimiter = "+i*";
+    static const char* DELIMITER = "+i*";
 
     class TComplex {
     public:
@@ -31,8 +31,8 @@ namespace NComplex {
         }
 
         explicit TComplex(std::string& c)
-            : Real(TComplex::parse_double(std::strtok(&c[0], Delimiter)))
-            , Imagn(TComplex::parse_double(std::strtok(NULL, Delimiter))) {
+            : Real(TComplex::parse_double(std::strtok(&c[0], DELIMITER)))
+            , Imagn(TComplex::parse_double(std::strtok(NULL, DELIMITER))) {
         }
 
         TComplex& operator=(const TComplex& rhs) {
@@ -205,10 +205,16 @@ void test_complex_constructor() {
     }
     TEST_CASE("CopyConstructor");
     {
-        TComplex a = TComplex(70.1, 1.07);
+        const double r = 70.1;
+        const double i = 1.07;
+        TComplex a = TComplex(r, i);
         TComplex b(a);
         TEST_CHECK(&a.Real != &b.Real && a.Real == b.Real);
         TEST_CHECK(&a.Imagn != &b.Imagn && a.Imagn == b.Imagn);
+        a.Real -= 1.0;
+        a.Imagn += 2.0;
+        TEST_CHECK(a.Real == r - 1.0 && a.Imagn == i + 2.0);
+        TEST_CHECK(b.Real == r && b.Imagn == i);
     }
 }
 
@@ -225,8 +231,10 @@ void test_complex_operations() {
         {TComplex(8.2, 9.3002), TComplex(2.8, 1.7003)},
         {TComplex(0.0, 9.3002), TComplex(2.8, 1.7003)},
         {TComplex(8.2, 0.0), TComplex(2.8, 0.0)},
+        {TComplex(0.0, -9.3002), TComplex(0.0, -1.7003)},
         {TComplex(0.0, 0.0), TComplex(0.0, -1.7003)},
-        {TComplex(0.0, 0.0), TComplex(0.0, -1.7003)},
+        {TComplex(0.0, 9.3002), TComplex(0.0, 0.0)},
+        {TComplex(8.2, 0.0), TComplex(0.0, 0.0)},
         {TComplex(0.0, 0.0), TComplex(0.0, 0.0)},
         {TComplex(-8.2, 9.3002), TComplex(2.8, 1.7003)},
         {TComplex(8.2, 9.3002), TComplex(-2.8, 1.7003)},
