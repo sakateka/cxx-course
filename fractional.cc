@@ -59,8 +59,6 @@ namespace NFrac {
                          Denominator() * rhs.Numerator());
         }
 
-        // Реализуйте для класса TFrac оператор(ы), необходимые для использования его
-        // в качестве ключа map'а и элемента set'а
         bool operator<(const TFrac& rhs) const {
             return Numerator() * rhs.Denominator() < rhs.Numerator() * Denominator();
         }
@@ -68,7 +66,6 @@ namespace NFrac {
     private:
         int numerator = 0;
         int denominator = 1;
-        // Добавьте поля
         int gcd(long int a, long int b) {
             long int rem = std::min(a, b);
             b = std::max(a, b);
