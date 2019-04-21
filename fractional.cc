@@ -3,12 +3,7 @@
 #include <algorithm>
 #include <iostream>
 #include <exception>
-#include <sstream>
 #include <assert.h>
-#include <set>
-#include <vector>
-#include <map>
-using namespace std;
 
 namespace NFrac {
     class TFrac {
@@ -18,7 +13,7 @@ namespace NFrac {
 
         TFrac(int new_numerator, int new_denominator) {
             if (new_denominator == 0) {
-                throw invalid_argument("denominator == 0");
+                throw std::invalid_argument("denominator == 0");
             }
             int sign = 1;
             if (new_denominator < 0) {
@@ -58,7 +53,7 @@ namespace NFrac {
         }
         TFrac operator/(const TFrac& rhs) {
             if (rhs.Numerator() == 0) {
-                throw domain_error("result to denominator == 0");
+                throw std::domain_error("result to denominator == 0");
             }
             return TFrac(Numerator() * rhs.Denominator(),
                          Denominator() * rhs.Numerator());
@@ -75,8 +70,8 @@ namespace NFrac {
         int denominator = 1;
         // Добавьте поля
         int gcd(long int a, long int b) {
-            long int rem = min(a, b);
-            b = max(a, b);
+            long int rem = std::min(a, b);
+            b = std::max(a, b);
             if (rem == 0) {
                 return b;
             }
@@ -90,11 +85,11 @@ namespace NFrac {
         }
     };
 
-    ostream& operator<<(ostream& output, const TFrac& r) {
+    std::ostream& operator<<(std::ostream& output, const TFrac& r) {
         output << r.Numerator() << "/" << r.Denominator();
         return output;
     }
-    istream& operator>>(istream& input, TFrac& r) {
+    std::istream& operator>>(std::istream& input, TFrac& r) {
         int n = r.Numerator(), d = r.Denominator();
         input >> n;
         input.ignore(1);
@@ -106,6 +101,11 @@ namespace NFrac {
 
 #ifdef RUN_TESTS
 using NFrac::TFrac;
+#include <sstream>
+#include <set>
+#include <vector>
+#include <map>
+using namespace std;
 int main() {
     {
         const TFrac r(3, 10);
