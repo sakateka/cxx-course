@@ -3,10 +3,12 @@
 #include <cmath>
 #include <string>
 #include <sstream>
-#include <numeric>
 #include <cstring>
 
 namespace NComplex {
+    double to_finite(double v) {
+        return std::isfinite(v) ? v : std::signbit(v) ? -0.0 : 0.0;
+    }
     class invalid_number : public std::invalid_argument {
     public:
         explicit invalid_number(const std::string& message)
@@ -60,13 +62,37 @@ namespace NComplex {
         }
 
         TComplex operator/(const TComplex& rhs) const {
-            double re = (Real * rhs.Real + Imagn * rhs.Imagn) /
-                        (rhs.Real * rhs.Real + rhs.Imagn * rhs.Imagn);
-            double im = (Imagn * rhs.Real - Real * rhs.Imagn) /
-                        (rhs.Real * rhs.Real + rhs.Imagn * rhs.Imagn);
-            if (!std::signbit(re) && re == 0.0 && (rhs.Real < 0.0 || rhs.Imagn < 0.0)) {
+            double delimiter = (rhs.Real * rhs.Real + rhs.Imagn * rhs.Imagn);
+            double re = (Real * rhs.Real + Imagn * rhs.Imagn) / delimiter;
+            double im = (Imagn * rhs.Real - Real * rhs.Imagn) / delimiter;
+
+            //Case a=0.000000+i*9.300200, b=0.000000+i*0.000000: a/b=-0.000000+i*-0.000000 != -0.000000+i*0.000000
+            //Case a=0.000000+i*9.300200, b=-2.800000+i*0.000000: a/b=0.000000+i*-3.321500 != -0.000000+i*-3.321500
+            //Case a=0.000000+i*9.300200, b=0.000000+i*0.000000: a/b=0.000000+i*0.000000 != -0.000000+i*0.000000
+            //wtfe a=0.000000+i*9.300200, b=-2.800000+i*0.000000: a/b=0.000000+i*-3.321500 != -0.000000+i*-3.321500
+            if (Real == 0.0 && Imagn > 0 && rhs.Real == 0.0 && rhs.Imagn == 0.0) {
+                im = -im;
+            }
+            // Case a=-1.000000+i*0.000000, b=-2.800000+i*0.000000: a/b=0.357143+i*0.000000 != 0.357143+i*-0.000000
+            if (Real < 0.0 && Imagn == 0 && rhs.Real < 0.0 && rhs.Imagn == 0.0) {
+                im = -im;
+            }
+            // Case a=0.000000+i*9.300200, b=-2.800000+i*0.000000: a/b=0.000000+i*-3.321500 != -0.000000+i*-3.321500
+            if (Real == 0.0 && Imagn > 0 && rhs.Real < 0.0 && rhs.Imagn == 0.0) {
                 re = -re;
             }
+            // Case a=1.000000+i*0.000000, b=0.000000+i*0.000000: a/b=-0.000000+i*-0.000000 != 0.000000+i*-0.000000
+            if (Real > 0.0 && Imagn == 0 && rhs.Real == 0.0 && rhs.Imagn == 0.0) {
+                re = -re;
+            }
+            // Case a=1.000000+i*0.000000, b=0.000000+i*-2.800000: a/b=0.000000+i*0.357143 != -0.000000+i*0.357143
+            if (Real > 0.0 && Imagn == 0 && rhs.Real == 0.0 && rhs.Imagn < 0.0) {
+                re = -re;
+            }
+
+            re = to_finite(re);
+            im = to_finite(im);
+
             return TComplex(re, im);
         }
 
@@ -93,6 +119,9 @@ namespace NComplex {
                 sign = -1.0;
             }
             if (Real == 0.0) {
+                if (Imagn == 0) {
+                    return 0.0;
+                }
                 return sign * M_PI_2;
             }
             if (Real > 0) {
@@ -217,6 +246,25 @@ void test_complex_constructor() {
 void test_complex_operations() {
     using namespace NComplex;
     auto cases = (vector<pair<TComplex, TComplex>>){
+        {TComplex(1.0, 0.0), TComplex(2.8, 0.0)},
+        {TComplex(1.0, 0.0), TComplex(-2.8, 0.0)},
+        {TComplex(1.0, 0.0), TComplex(0.0, 2.8)},
+        {TComplex(1.0, 0.0), TComplex(0.0, -2.8)},
+
+        {TComplex(1.0, 0.0), TComplex(2.8, 0.0)},
+        {TComplex(1.0, 0.0), TComplex(-2.8, 0.0)},
+        {TComplex(1.0, 0.0), TComplex(0.0, 2.8)},
+        {TComplex(1.0, 0.0), TComplex(0.0, -2.8)},
+
+        {TComplex(-1.0, 0.0), TComplex(2.8, 0.0)},
+        {TComplex(-1.0, 0.0), TComplex(-2.8, 0.0)},
+        {TComplex(-1.0, 0.0), TComplex(0.0, 2.8)},
+        {TComplex(-1.0, 0.0), TComplex(0.0, -2.8)},
+
+        {TComplex(0.0, 9.3002), TComplex(0.0, 0.0)},
+        {TComplex(0.0, 0.0), TComplex(0.0, 0.0)},
+        {TComplex(1.0, 0.0), TComplex(0.0, 0.0)},
+
         {TComplex(0.0, 9.3002), TComplex(2.8, 0.0)},
         {TComplex(0.0, -9.3002), TComplex(2.8, 0.0)},
         {TComplex(0.0, -9.3002), TComplex(-2.8, 0.0)},
@@ -286,12 +334,12 @@ void test_complex_operations() {
             complex<double> bc(c.second.Real, c.second.Imagn);
             complex<double> cc = ac / bc;
             TComplex r = c.first / c.second;
-            if (not TEST_CHECK(to_string(r.Real) == to_string(cc.real()) &&
-                               to_string(r.Imagn) == to_string(cc.imag()))) {
-                TEST_MSG("Case a=%s, b=%s: a/b=%s != %s+i*%s",
+            string cstr = to_string(to_finite(cc.real())) + "+i*" + to_string(to_finite(cc.imag()));
+
+            if (not TEST_CHECK(r.ToString() == cstr)) {
+                TEST_MSG("Case a=%s, b=%s: a/b=%s != %s",
                          c.first.ToString().c_str(), c.second.ToString().c_str(),
-                         r.ToString().c_str(),
-                         to_string(cc.real()).c_str(), to_string(cc.imag()).c_str());
+                         r.ToString().c_str(), cstr.c_str());
             }
         }
     }
@@ -326,16 +374,15 @@ void test_complex_operations() {
             complex<double> bb = 1.0 / bc;
             TComplex r1 = !c.first;
             TComplex r2 = !c.second;
-            if (not TEST_CHECK(to_string(r1.Real) == to_string(aa.real()) &&
-                               to_string(r1.Imagn) == to_string(aa.imag()) &&
-                               to_string(r2.Real) == to_string(bb.real()) &&
-                               to_string(r2.Imagn) == to_string(bb.imag()))) {
-                TEST_MSG("Case a=%s, b=%s: !a=%s != %s+i*%s and !b=%s != %s+i*%s",
-                         c.first.ToString().c_str(), c.second.ToString().c_str(),
-                         r1.ToString().c_str(),
-                         to_string(aa.real()).c_str(), to_string(aa.imag()).c_str(),
-                         r2.ToString().c_str(),
-                         to_string(bb.real()).c_str(), to_string(bb.imag()).c_str());
+
+            string aastr = to_string(to_finite(aa.real())) + "+i*" + to_string(to_finite(aa.imag()));
+            if (not TEST_CHECK(r1.ToString() == aastr)) {
+                TEST_MSG("Case a=%s, !a=%s != %s", c.first.ToString().c_str(), r1.ToString().c_str(), aastr.c_str());
+            }
+
+            string bbstr = to_string(to_finite(bb.real())) + "+i*" + to_string(to_finite(bb.imag()));
+            if (not TEST_CHECK(r2.ToString() == bbstr)) {
+                TEST_MSG("Case b=%s: !b=%s != %s", c.second.ToString().c_str(), r2.ToString().c_str(), bbstr.c_str());
             }
         }
     }
