@@ -94,7 +94,7 @@ namespace NComplex {
         }
 
         bool operator!=(const TComplex& rhs) const {
-            return !(this == &rhs);
+            return !(*this == rhs);
         }
 
         double AngleRad() const {
@@ -511,8 +511,12 @@ void test_complex_operations() {
     TEST_CASE("Not Equal");
     {
         for (auto& c : cases) {
-            TEST_CHECK(c.first != c.second);
-            TEST_CHECK(c.second == c.second);
+            if (c.first.Real == c.second.Real && c.first.Imagn == c.second.Imagn) {
+                TEST_CHECK_(c.first == c.second, (c.first.ToString() + "==" + c.second.ToString()).c_str());
+            } else {
+                TEST_CHECK_(c.first != c.second, (c.first.ToString() + "!=" + c.second.ToString()).c_str());
+            }
+            TEST_CHECK_(c.second == c.second, (c.second.ToString() + "==" + c.second.ToString()).c_str());
         }
         TEST_CHECK(TComplex(8.25, 1) != TComplex(8.26, 1.1));
         TEST_CHECK(TComplex(0, 0) != TComplex(-1, 0));
