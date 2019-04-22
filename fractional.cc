@@ -76,6 +76,9 @@ namespace NFrac {
             return TFrac(GetNumerator() * rhs.GetDenominator() - rhs.GetNumerator() * GetDenominator(),
                          GetDenominator() * rhs.GetDenominator());
         }
+        TFrac operator-() const {
+            return TFrac(0, 1) - *this;
+        }
         TFrac operator*(const TFrac& rhs) const {
             return TFrac(GetNumerator() * rhs.GetNumerator(),
                          GetDenominator() * rhs.GetDenominator());
@@ -218,6 +221,15 @@ void test_fractional_operations() {
         TFrac b = !a;
         TEST_CHECK(b == TFrac(4, 5));
         TEST_EXCEPTION(!TFrac(0, 1), invalid_argument);
+    }
+    TEST_CASE("Neg");
+    {
+        TFrac a(5, 4);
+        TFrac b = -a;
+        TFrac c = TFrac(0, 1) - TFrac(5, 4);
+        if (not TEST_CHECK(b == c)) {
+            TEST_MSG("%s != %s", b.ToString().c_str(), c.ToString().c_str());
+        }
     }
     TEST_CASE("Less / Great");
     {
