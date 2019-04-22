@@ -4,6 +4,7 @@
 #include <iostream>
 #include <exception>
 #include <string>
+#include <sstream>
 #include <assert.h>
 
 namespace NFrac {
@@ -25,6 +26,15 @@ namespace NFrac {
             assert(rgcd != 0);
             numerator = new_numerator / rgcd * sign;
             denominator = new_denominator / rgcd;
+        }
+
+        explicit TFrac(std::string frac) {
+            std::istringstream s(frac);
+            int n = numerator, d = denominator;
+            s >> n;
+            s.ignore(1);
+            s >> d;
+            *this = TFrac(n, d);
         }
 
         TFrac Copy() const {
@@ -118,11 +128,9 @@ namespace NFrac {
         return output;
     }
     std::istream& operator>>(std::istream& input, TFrac& r) {
-        int n = r.GetNumerator(), d = r.GetDenominator();
-        input >> n;
-        input.ignore(1);
-        input >> d;
-        r = TFrac(n, d);
+        std::string tmp;
+        input >> tmp;
+        r = TFrac(tmp);
         return input;
     }
 } // namespace NFrac
@@ -262,9 +270,16 @@ void test_fractional_operations() {
         TFrac r1, r2;
         input >> r1 >> r2;
         TEST_CHECK(r1 == TFrac(5, 7) && r2 == TFrac(5, 4));
+
+        // Do not reset if input eof
         input >> r1;
         input >> r2;
-        TEST_CHECK(r1 == TFrac(5, 7) && r2 == TFrac(5, 4));
+        TEST_CHECK(r1 == TFrac(0, 1) && r2 == TFrac(0, 1));
+
+        input = istringstream("9/7 12/4");
+        input >> r1;
+        input >> r2;
+        TEST_CHECK(r1 == TFrac(9, 7) && r2 == TFrac(3, 1));
     }
     TEST_CASE("Set element");
     {
