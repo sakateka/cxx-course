@@ -7,6 +7,7 @@
 #include "pnumber.cc"
 #include "proc.cc"
 #include "complex.cc"
+#include "fractional.cc"
 
 // acutest provide main func
 TEST_LIST = {
@@ -26,4 +27,7 @@ TEST_LIST = {
     // Complex
     {"complex_constructor", test_complex_constructor},
     {"complex_operations", test_complex_operations},
+    // Fractional
+    {"fractional_constructor", test_fractional_construction},
+    {"fractional_operations", test_fractional_operations},
     {NULL, NULL}};

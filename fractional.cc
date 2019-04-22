@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <iostream>
 #include <exception>
+#include <string>
 #include <assert.h>
 
 namespace NFrac {
@@ -26,41 +27,71 @@ namespace NFrac {
             denominator = new_denominator / rgcd;
         }
 
-        int Numerator() const {
+        TFrac Copy() const {
+            return TFrac(GetNumerator(), GetDenominator());
+        }
+
+        int GetNumerator() const {
             return numerator;
         }
-        int Denominator() const {
+        int GetDenominator() const {
             return denominator;
+        }
+        std::string GetNumeratorAsStr() const {
+            return std::to_string(numerator);
+        }
+        std::string GetDenominatorAsStr() const {
+            return std::to_string(denominator);
+        }
+        void SetNumerator(int n) {
+            TFrac tmp = {n, GetDenominator()}; // simplify and check sign
+            numerator = tmp.GetNumerator();
+            denominator = tmp.GetDenominator();
+        }
+        void SetDenominator(int d) {
+            TFrac tmp = {GetNumerator(), d}; // simplify and check sign
+            numerator = tmp.GetNumerator();
+            denominator = tmp.GetDenominator();
         }
 
         bool operator==(const TFrac& rhs) const {
-            return Numerator() == rhs.Numerator() and
-                   Denominator() == rhs.Denominator();
+            return GetNumerator() == rhs.GetNumerator() and
+                   GetDenominator() == rhs.GetDenominator();
         }
         TFrac operator+(const TFrac& rhs) const {
-            return TFrac(Numerator() * rhs.Denominator() +
-                             rhs.Numerator() * Denominator(),
-                         Denominator() * rhs.Denominator());
+            return TFrac(GetNumerator() * rhs.GetDenominator() + rhs.GetNumerator() * GetDenominator(),
+                         GetDenominator() * rhs.GetDenominator());
         }
         TFrac operator-(const TFrac& rhs) const {
-            return TFrac(Numerator() * rhs.Denominator() -
-                             rhs.Numerator() * Denominator(),
-                         Denominator() * rhs.Denominator());
+            return TFrac(GetNumerator() * rhs.GetDenominator() - rhs.GetNumerator() * GetDenominator(),
+                         GetDenominator() * rhs.GetDenominator());
         }
-        TFrac operator*(const TFrac& rhs) {
-            return TFrac(Numerator() * rhs.Numerator(),
-                         Denominator() * rhs.Denominator());
+        TFrac operator*(const TFrac& rhs) const {
+            return TFrac(GetNumerator() * rhs.GetNumerator(),
+                         GetDenominator() * rhs.GetDenominator());
         }
-        TFrac operator/(const TFrac& rhs) {
-            if (rhs.Numerator() == 0) {
+        TFrac operator/(const TFrac& rhs) const {
+            if (rhs.GetNumerator() == 0) {
                 throw std::domain_error("result to denominator == 0");
             }
-            return TFrac(Numerator() * rhs.Denominator(),
-                         Denominator() * rhs.Numerator());
+            return TFrac(GetNumerator() * rhs.GetDenominator(),
+                         GetDenominator() * rhs.GetNumerator());
+        }
+        TFrac operator!() const {
+            return TFrac(GetDenominator(), GetNumerator());
+        }
+        TFrac Sqr() const {
+            return *this * *this;
         }
 
         bool operator<(const TFrac& rhs) const {
-            return Numerator() * rhs.Denominator() < rhs.Numerator() * Denominator();
+            return GetNumerator() * rhs.GetDenominator() < rhs.GetNumerator() * GetDenominator();
+        }
+        bool operator>(const TFrac& rhs) const {
+            return !(*this < rhs) && !(*this == rhs);
+        }
+        std::string ToString() const {
+            return GetNumeratorAsStr() + "/" + GetDenominatorAsStr();
         }
 
     private:
@@ -80,14 +111,14 @@ namespace NFrac {
             } while (rem != 0);
             return a;
         }
-    };
+    }; // class TFrac
 
     std::ostream& operator<<(std::ostream& output, const TFrac& r) {
-        output << r.Numerator() << "/" << r.Denominator();
+        output << r.ToString();
         return output;
     }
     std::istream& operator>>(std::istream& input, TFrac& r) {
-        int n = r.Numerator(), d = r.Denominator();
+        int n = r.GetNumerator(), d = r.GetDenominator();
         input >> n;
         input.ignore(1);
         input >> d;
@@ -97,202 +128,181 @@ namespace NFrac {
 } // namespace NFrac
 
 #ifdef RUN_TESTS
-using NFrac::TFrac;
+#include "acutest.h"
 #include <sstream>
 #include <set>
 #include <vector>
 #include <map>
+using NFrac::TFrac;
 using namespace std;
-int main() {
+void test_fractional_construction() {
+    TEST_CASE("Constructor");
     {
         const TFrac r(3, 10);
-        if (r.Numerator() != 3 || r.Denominator() != 10) {
-            cout << "TFrac(3, 10) != 3/10" << endl;
-            return 1;
-        }
+        TEST_CHECK(r.GetNumerator() == 3 && r.GetDenominator() == 10);
     }
-
+    TEST_CASE("Constructor simplify");
     {
         const TFrac r(8, 12);
-        if (r.Numerator() != 2 || r.Denominator() != 3) {
-            cout << "TFrac(8, 12) != 2/3" << endl;
-            return 2;
-        }
+        TEST_CHECK(r.GetNumerator() == 2 && r.GetDenominator() == 3);
     }
-
     {
         const TFrac r(-4, 6);
-        if (r.Numerator() != -2 || r.Denominator() != 3) {
-            cout << "TFrac(-4, 6) != -2/3" << endl;
-            return 3;
-        }
+        TEST_CHECK(r.GetNumerator() == -2 && r.GetDenominator() == 3);
     }
-
     {
         const TFrac r(4, -6);
-        if (r.Numerator() != -2 || r.Denominator() != 3) {
-            cout << "TFrac(4, -6) != -2/3" << endl;
-            return 3;
-        }
+        TEST_CHECK(r.GetNumerator() == -2 && r.GetDenominator() == 3);
     }
-
     {
         const TFrac r(0, 15);
-        if (r.Numerator() != 0 || r.Denominator() != 1) {
-            cout << "TFrac(0, 15) != 0/1" << endl;
-            return 4;
-        }
+        TEST_CHECK(r.GetNumerator() == 0 && r.GetDenominator() == 1);
     }
-
+    TEST_CASE("Default Constructor");
     {
-        const TFrac defaultConstructed;
-        if (defaultConstructed.Numerator() != 0 ||
-            defaultConstructed.Denominator() != 1) {
-            cout << "TFrac() != 0/1" << endl;
-            return 5;
-        }
+        const TFrac r;
+        TEST_CHECK(r.GetNumerator() == 0 && r.GetDenominator() == 1);
     }
+    TEST_CASE("Illegal arguments");
+    TEST_EXCEPTION(TFrac r(1, 0), invalid_argument);
+}
+
+void test_fractional_operations() {
+    TEST_CASE("Equal");
     {
         TFrac r1(4, 6);
         TFrac r2(2, 3);
-        bool equal = r1 == r2;
-        if (!equal) {
-            cout << "4/6 != 2/3" << endl;
-            return 1;
-        }
+        TEST_CHECK(r1 == r2);
     }
 
+    TEST_CASE("Add");
     {
         TFrac a(2, 3);
         TFrac b(4, 3);
         TFrac c = a + b;
-        bool equal = c == TFrac(2, 1);
-        if (!equal) {
-            cout << "2/3 + 4/3 != 2" << endl;
-            return 2;
-        }
+        TEST_CHECK(c == TFrac(2, 1));
     }
 
+    TEST_CASE("Sub");
     {
         TFrac a(5, 7);
         TFrac b(2, 9);
         TFrac c = a - b;
-        bool equal = c == TFrac(31, 63);
-        if (!equal) {
-            cout << "5/7 - 2/9 != 31/63" << endl;
-            return 3;
-        }
+        TEST_CHECK(c == TFrac(31, 63));
     }
+    TEST_CASE("Mul");
     {
         TFrac a(2, 3);
         TFrac b(4, 3);
         TFrac c = a * b;
-        bool equal = c == TFrac(8, 9);
-        if (!equal) {
-            cout << "2/3 * 4/3 != 8/9" << endl;
-            return 1;
-        }
+        TEST_CHECK(c == TFrac(8, 9));
     }
-
+    TEST_CASE("Div");
     {
         TFrac a(5, 4);
         TFrac b(15, 8);
         TFrac c = a / b;
-        bool equal = c == TFrac(2, 3);
-        if (!equal) {
-            cout << "5/4 / 15/8 != 2/3" << endl;
-            return 2;
-        }
+        TEST_CHECK(c == TFrac(2, 3));
     }
+    TEST_CASE("Invert");
+    {
+        TFrac a(5, 4);
+        TFrac b = !a;
+        TEST_CHECK(b == TFrac(4, 5));
+        TEST_EXCEPTION(!TFrac(0, 1), invalid_argument);
+    }
+    TEST_CASE("Less / Great");
+    {
+        TFrac a(3, 4);
+        TFrac b(5, 4);
+        TEST_CHECK(a < b);
+        TEST_CHECK(b > a);
+    }
+    TEST_CASE("Sqr");
+    {
+        TFrac a(5, 4);
+        TFrac b = a.Sqr();
+        TEST_CHECK(a == TFrac(5, 4));
+        TEST_CHECK(b == TFrac(25, 16));
+    }
+    TEST_CASE("ToString");
+    {
+        TFrac a(5, 4);
+        TEST_CHECK(a.GetNumeratorAsStr() == "5");
+        TEST_CHECK(a.GetDenominatorAsStr() == "4");
+        TEST_CHECK(a.ToString() == "5/4");
+        TFrac b(-5, -4);
+        TEST_CHECK(b.GetNumeratorAsStr() == "5");
+        TEST_CHECK(b.GetDenominatorAsStr() == "4");
+        TEST_CHECK(b.ToString() == "5/4");
+        TFrac c(-5, 4);
+        TEST_CHECK(c.GetNumeratorAsStr() == "-5");
+        TEST_CHECK(c.GetDenominatorAsStr() == "4");
+        TEST_CHECK(c.ToString() == "-5/4");
+        TFrac d(5, -4);
+        TEST_CHECK(d.GetNumeratorAsStr() == "-5");
+        TEST_CHECK(d.GetDenominatorAsStr() == "4");
+        TEST_CHECK(d.ToString() == "-5/4");
+    }
+    TEST_CASE("ostream out");
     {
         ostringstream output;
         output << TFrac(-6, 8);
-        if (output.str() != "-3/4") {
-            cout << "TFrac(-6, 8) should be written as \"-3/4\"" << endl;
-            return 1;
-        }
+        TEST_CHECK(output.str() == "-3/4");
     }
-
+    TEST_CASE("istream in");
     {
         istringstream input("5/7");
         TFrac r;
         input >> r;
-        bool equal = r == TFrac(5, 7);
-        if (!equal) {
-            cout << "5/7 is incorrectly read as " << r << endl;
-            return 2;
-        }
+        TEST_CHECK(r == TFrac(5, 7));
     }
-
     {
         istringstream input("5/7 10/8");
         TFrac r1, r2;
         input >> r1 >> r2;
-        bool correct = r1 == TFrac(5, 7) && r2 == TFrac(5, 4);
-        if (!correct) {
-            cout << "Multiple values are read incorrectly: " << r1 << " " << r2
-                 << endl;
-            return 3;
-        }
-
+        TEST_CHECK(r1 == TFrac(5, 7) && r2 == TFrac(5, 4));
         input >> r1;
         input >> r2;
-        correct = r1 == TFrac(5, 7) && r2 == TFrac(5, 4);
-        if (!correct) {
-            cout << "Read from empty stream shouldn't change arguments: " << r1 << " "
-                 << r2 << endl;
-            return 4;
-        }
+        TEST_CHECK(r1 == TFrac(5, 7) && r2 == TFrac(5, 4));
     }
+    TEST_CASE("Set element");
     {
         const set<TFrac> rs = {{1, 2}, {1, 25}, {3, 4}, {3, 4}, {1, 2}};
-        for (auto& r : rs) {
-            cout << r << " ";
-        }
-        cout << endl;
-        if (rs.size() != 3) {
-            cout << "Wrong amount of items in the set" << endl;
-            return 1;
-        }
-
+        TEST_CHECK(rs.size() == 3);
         vector<TFrac> v;
         for (auto x : rs) {
             v.push_back(x);
         }
-        if (v != vector<TFrac>{{1, 25}, {1, 2}, {3, 4}}) {
-            cout << "TFracs comparison works incorrectly" << endl;
-            return 2;
-        }
+        TEST_CHECK((v == vector<TFrac>{{1, 25}, {1, 2}, {3, 4}}));
     }
-
+    TEST_CASE("Map key");
     {
         map<TFrac, int> count;
         ++count[{1, 2}];
         ++count[{1, 2}];
-
         ++count[{2, 3}];
-
-        if (count.size() != 2) {
-            cout << "Wrong amount of items in the map" << endl;
-            return 3;
-        }
+        TEST_CHECK(count.size() == 2);
     }
-    try {
-        TFrac r(1, 0);
-        cout << r << " Doesn't throw in case of zero denominator" << endl;
-        return 1;
-    } catch (invalid_argument&) {
-    }
+    TEST_CASE("Zero division");
+    TEST_EXCEPTION(TFrac(1, 2) / TFrac(0, 1), domain_error);
 
-    try {
-        auto x = TFrac(1, 2) / TFrac(0, 1);
-        cout << x << " Doesn't throw in case of division by zero" << endl;
-        return 2;
-    } catch (domain_error&) {
+    TEST_CASE("SetNumerator and SetDenominator");
+    {
+        TFrac a(5, 4);
+        a.SetNumerator(10);
+        TEST_CHECK(a == TFrac(5, 2));
+        a.SetDenominator(15);
+        TEST_CHECK(a == TFrac(1, 3));
+        TEST_EXCEPTION(a.SetDenominator(0), invalid_argument);
     }
-
-    cout << "OK" << endl;
-    return 0;
+    TEST_CASE("Copy");
+    {
+        TFrac a(5, 4);
+        TFrac b = a.Copy();
+        a.SetNumerator(1);
+        TEST_CHECK(a.GetNumerator() != b.GetNumerator());
+    }
 }
 #endif // #ifdef RUN_TESTS
 #endif // #ifndef FRACTIONAL_CC

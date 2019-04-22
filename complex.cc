@@ -196,12 +196,6 @@ namespace NComplex {
 #include <tuple>
 #include <iostream>
 using namespace std;
-double to_unsigned_if_zero(double v) {
-    if (v == 0.0 && std::signbit(v)) {
-        return 0.0;
-    }
-    return v;
-}
 
 //
 // Constructors
