@@ -3,7 +3,7 @@
 #include <cmath>
 #include <string>
 #include <sstream>
-#include <cstdlib>
+#include <numeric>
 #include <cstring>
 
 namespace NComplex {
@@ -20,7 +20,7 @@ namespace NComplex {
         double Real;
         double Imagn;
 
-        TComplex(double r = 0, double i = 0)
+        TComplex(double r, double i)
             : Real(r)
             , Imagn(i) {
         }
@@ -64,6 +64,9 @@ namespace NComplex {
                         (rhs.Real * rhs.Real + rhs.Imagn * rhs.Imagn);
             double im = (Imagn * rhs.Real - Real * rhs.Imagn) /
                         (rhs.Real * rhs.Real + rhs.Imagn * rhs.Imagn);
+            if (!std::signbit(re) && re == 0.0 && (rhs.Real < 0.0 || rhs.Imagn < 0.0)) {
+                re = -re;
+            }
             return TComplex(re, im);
         }
 
@@ -72,9 +75,8 @@ namespace NComplex {
         }
 
         TComplex operator!() const {
-            double re = Real / (Real * Real + Imagn * Imagn);
-            double im = -Imagn / (Real * Real + Imagn * Imagn);
-            return TComplex(re, im);
+            TComplex res = TComplex(1, 0) / *this;
+            return res;
         }
 
         bool operator==(const TComplex& rhs) const {
@@ -86,39 +88,33 @@ namespace NComplex {
         }
 
         double AngleRad() const {
-            if (Real == 0) {
-                if (Imagn > 0) {
-                    return M_PI_2;
-                }
-                if (Imagn < 0) {
-                    return -M_PI_2;
-                }
+            double sign = 1.0;
+            if (Imagn < 0.0) {
+                sign = -1.0;
+            }
+            if (Real == 0.0) {
+                return sign * M_PI_2;
             }
             if (Real > 0) {
                 return atan(Imagn / Real);
+            } else {
+                return atan(Imagn / Real) + sign * M_PI;
             }
-            if (Real < 0) {
-                return atan(Imagn / Real) + M_PI;
-            }
-            return 0.0;
         }
 
         double AngleDeg() const {
+            double sign = 1.0;
+            if (Imagn < 0.0) {
+                sign = -1.0;
+            }
             if (Real == 0) {
-                if (Imagn > 0) {
-                    return 90.0;
-                }
-                if (Imagn < 0) {
-                    return -90.0;
-                }
+                return sign * 90.0;
             }
             if (Real > 0) {
-                return (atan(Imagn / Real) * 360) / (2 * M_PI);
+                return atan(Imagn / Real) * 360 / (2 * M_PI);
+            } else {
+                return (atan(Imagn / Real) + M_PI) * 360 / (2 * M_PI);
             }
-            if (Real < 0) {
-                return ((atan(Imagn / Real) + M_PI) * 360) / (2 * M_PI);
-            }
-            return 0.0;
         }
 
         double Abs() const {
@@ -168,8 +164,8 @@ namespace NComplex {
             }
             return n;
         }
-    };
-}; // namespace NComplex
+    }; // namespace NComplex
+};     // namespace NComplex
 
 #ifdef RUN_TESTS
 #include "acutest.h"
@@ -220,28 +216,32 @@ void test_complex_constructor() {
 
 void test_complex_operations() {
     using namespace NComplex;
+    auto cases = (vector<pair<TComplex, TComplex>>){
+        {TComplex(0.0, 9.3002), TComplex(2.8, 0.0)},
+        {TComplex(0.0, -9.3002), TComplex(2.8, 0.0)},
+        {TComplex(0.0, -9.3002), TComplex(-2.8, 0.0)},
+        {TComplex(0.0, 9.3002), TComplex(-2.8, 0.0)},
+        {TComplex(8.2, 9.3002), TComplex(2.8, 1.7003)},
+        {TComplex(8.2, 9.3002), TComplex(-2.8, 1.7003)},
+        {TComplex(8.2, 9.3002), TComplex(-2.8, -1.7003)},
+        {TComplex(8.2, -9.3002), TComplex(-2.8, -1.7003)},
+        {TComplex(-8.2, -9.3002), TComplex(-2.8, -1.7003)},
+        {TComplex(-8.2, -9.3002), TComplex(-2.8, 1.7003)},
+        {TComplex(-8.2, -9.3002), TComplex(2.8, 1.7003)},
+        {TComplex(-8.2, 9.3002), TComplex(2.8, 1.7003)},
+    };
+
     TEST_CASE("ToString");
     {
         TComplex c = TComplex(8.2, 9.3);
         if (not TEST_CHECK(c.ToString() == "8.200000+i*9.300000")) {
             TEST_MSG(c.ToString().c_str());
         }
+        for (auto& c : cases) {
+            TEST_CHECK(c.first.ToString() == c.first.GetRealAsStr() + "+i*" + c.first.GetImagnAsStr());
+            TEST_CHECK(c.second.ToString() == c.second.GetRealAsStr() + "+i*" + c.second.GetImagnAsStr());
+        }
     }
-    auto cases = (vector<pair<TComplex, TComplex>>){
-        {TComplex(8.2, 9.3002), TComplex(2.8, 1.7003)},
-        {TComplex(0.0, 9.3002), TComplex(2.8, 1.7003)},
-        {TComplex(8.2, 0.0), TComplex(2.8, 0.0)},
-        {TComplex(0.0, -9.3002), TComplex(0.0, -1.7003)},
-        {TComplex(0.0, 0.0), TComplex(0.0, -1.7003)},
-        {TComplex(0.0, 9.3002), TComplex(0.0, 0.0)},
-        {TComplex(8.2, 0.0), TComplex(0.0, 0.0)},
-        {TComplex(0.0, 0.0), TComplex(0.0, 0.0)},
-        {TComplex(-8.2, 9.3002), TComplex(2.8, 1.7003)},
-        {TComplex(8.2, 9.3002), TComplex(-2.8, 1.7003)},
-        {TComplex(8.2, 9.3002), TComplex(-2.8, -1.7003)},
-        {TComplex(8.2, -9.3002), TComplex(-2.8, -1.7003)},
-        {TComplex(-8.2, -9.3002), TComplex(-2.8, -1.7003)},
-    };
     TEST_CASE("Add");
     {
         for (auto& c : cases) {
@@ -366,20 +366,14 @@ void test_complex_operations() {
         for (auto& c : cases) {
             complex<double> ac(c.first.Real, c.first.Imagn);
             complex<double> bc(c.second.Real, c.second.Imagn);
-            complex<double> aa = abs(ac);
-            complex<double> bb = abs(bc);
-            TComplex r1 = c.first.Abs();
-            TComplex r2 = c.second.Abs();
-            if (not TEST_CHECK(to_string(r1.Real) == to_string(aa.real()) &&
-                               to_string(r1.Imagn) == to_string(aa.imag()) &&
-                               to_string(r2.Real) == to_string(bb.real()) &&
-                               to_string(r2.Imagn) == to_string(bb.imag()))) {
-                TEST_MSG("Case a=%s, b=%s: a.Abs()=%s != %s+i*%s and b.Abs()=%s != %s+i*%s",
+            double aa = abs(ac);
+            double bb = abs(bc);
+            double r1 = c.first.Abs();
+            double r2 = c.second.Abs();
+            if (not TEST_CHECK(to_string(r1) == to_string(aa) && to_string(r2) == to_string(bb))) {
+                TEST_MSG("Case a=%s, b=%s: a.Abs()=%lf != %lf and b.Abs()=%lf != %lf",
                          c.first.ToString().c_str(), c.second.ToString().c_str(),
-                         r1.ToString().c_str(),
-                         to_string(aa.real()).c_str(), to_string(aa.imag()).c_str(),
-                         r2.ToString().c_str(),
-                         to_string(bb.real()).c_str(), to_string(bb.imag()).c_str());
+                         r1, aa, r2, bb);
             }
         }
     }
@@ -388,20 +382,14 @@ void test_complex_operations() {
         for (auto& c : cases) {
             complex<double> ac(c.first.Real, c.first.Imagn);
             complex<double> bc(c.second.Real, c.second.Imagn);
-            complex<double> aa = arg(ac);
-            complex<double> bb = arg(bc);
-            TComplex r1 = c.first.AngleRad();
-            TComplex r2 = c.second.AngleRad();
-            if (not TEST_CHECK(to_string(r1.Real) == to_string(aa.real()) &&
-                               to_string(r1.Imagn) == to_string(aa.imag()) &&
-                               to_string(r2.Real) == to_string(bb.real()) &&
-                               to_string(r2.Imagn) == to_string(bb.imag()))) {
-                TEST_MSG("Case a=%s, b=%s: a.AngleRad()=%s != %s+i*%s and b.AngleRad()=%s != %s+i*%s",
+            double aa = arg(ac);
+            double bb = arg(bc);
+            double r1 = c.first.AngleRad();
+            double r2 = c.second.AngleRad();
+            if (not TEST_CHECK(to_string(r1) == to_string(aa) && to_string(r2) == to_string(bb))) {
+                TEST_MSG("Case a=%s, b=%s: a.AngleRad()=%lf != %lf and b.AngleRad()=%lf != %lf",
                          c.first.ToString().c_str(), c.second.ToString().c_str(),
-                         r1.ToString().c_str(),
-                         to_string(aa.real()).c_str(), to_string(aa.imag()).c_str(),
-                         r2.ToString().c_str(),
-                         to_string(bb.real()).c_str(), to_string(bb.imag()).c_str());
+                         r1, aa, r2, bb);
             }
         }
     }
@@ -450,6 +438,41 @@ void test_complex_operations() {
                          to_string(bb.real()).c_str(), to_string(bb.imag()).c_str());
             }
         }
+    }
+    TEST_CASE("Equal");
+    {
+        for (auto& c : cases) {
+            TEST_CHECK(c.first == c.first);
+            TEST_CHECK(c.second == c.second);
+        }
+        TEST_CHECK(TComplex(8.025, 1.5) == TComplex(8.025, 1.5));
+    }
+    TEST_CASE("Not Equal");
+    {
+        for (auto& c : cases) {
+            TEST_CHECK(c.first != c.second);
+            TEST_CHECK(c.second == c.second);
+        }
+        TEST_CHECK(TComplex(8.25, 1) != TComplex(8.26, 1.1));
+        TEST_CHECK(TComplex(0, 0) != TComplex(-1, 0));
+    }
+    TEST_CASE("Get Real part");
+    {
+        TComplex c(8.25, 1);
+        TEST_CHECK(c.Real == 8.25);
+        TEST_CHECK(c.GetRealAsStr() == "8.250000");
+        TComplex c2(-8.25, 1);
+        TEST_CHECK(c2.Real == -8.25);
+        TEST_CHECK(c2.GetRealAsStr() == "-8.250000");
+    }
+    TEST_CASE("Get Imagn part");
+    {
+        TComplex c(8.25, 1);
+        TEST_CHECK(c.Imagn == 1.0);
+        TEST_CHECK(c.GetImagnAsStr() == "1.000000");
+        TComplex c2(8.25, -1);
+        TEST_CHECK(c2.Imagn == -1.0);
+        TEST_CHECK(c2.GetImagnAsStr() == "-1.000000");
     }
 }
 #endif // #ifdef RUN_TESTS
