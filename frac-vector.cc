@@ -26,7 +26,7 @@ public:
 
     void Input(istream& in, ostream& out) {
         //Вводим данные с клавиатуры и заносим в контейнер.
-        out << "Input (one per line):" << endl;
+        out << "Input: ";
         string frac;
         while (in >> frac) {
             try {
