@@ -30,18 +30,15 @@ namespace NFrac {
 
         explicit TFrac(std::string frac) {
             std::istringstream s(frac);
-            int n = numerator, d = denominator;
+            int n = 0, d = 1;
             s >> n;
             if (!s.eof()) {
                 char sym = s.peek();
-                if (sym == '/') {
-                    s.ignore(1);
+                if (sym == '/' && s.ignore(1) && !s.eof()) {
                     s >> d;
                 }
-            } else {
-                d = 1;
             }
-            if (!s.eof() || s.fail()) {
+            if (!s.eof()) {
                 throw std::invalid_argument(frac);
             }
             *this = TFrac(n, d);
@@ -290,10 +287,11 @@ void test_fractional_operations() {
     {
         istringstream input("5/7 10/8");
         TFrac r1, r2;
+        TEST_CHECK(r1 == TFrac(0, 1) && r2 == TFrac(0, 1));
         input >> r1 >> r2;
         TEST_CHECK(r1 == TFrac(5, 7) && r2 == TFrac(5, 4));
 
-        // Do not reset if input eof
+        // Reset if input eof
         input >> r1;
         input >> r2;
         TEST_CHECK(r1 == TFrac(0, 1) && r2 == TFrac(0, 1));

@@ -5,12 +5,13 @@
 #include <string>
 #include <vector>
 #include <functional>
+#include <numeric>
 #include "acutest.h"
 
 // force test running
 #ifndef RUN_TESTS
 #define RUN_TESTS
-#endif // RUN_TESTS
+#endif // #ifndef RUN_TESTS
 
 #include "fractional.cc"
 
@@ -40,7 +41,7 @@ public:
     void Output(ostream& out) {
         //Выводим содержимое контейнера на монитор.
         out << "{";
-        for (int i = 0; i < data.size(); i++) {
+        for (size_t i = 0; i < data.size(); i++) {
             if (i != 0) {
                 out << ", ";
             }
