@@ -41,15 +41,11 @@ namespace NPNumber {
 
     class TPNumber {
     public:
-        TPNumber(double n, int b, int c) {
+        TPNumber(double n = 0, int b = 10, int c = 0) {
             number = n;
             radix = validate_radix(b);
             precision = validate_precision(c);
         }
-        static TPNumber default_() {
-            return TPNumber(0, 10, 0);
-        };
-
         TPNumber(const std::string& n, const std::string& b, const std::string& c) {
             SetRadix(parse_radix(b));
             precision = parse_precision(c);
@@ -288,7 +284,13 @@ void test_pnumber_constructor() {
         p = TPNumber(-11.3, 16, 1);
         TEST_CHECK(p.GetNumber() == -11.3);
     }
-
+    {
+        TEST_CASE("ConstructorNumber negative number");
+        TPNumber p = TPNumber(-17.875, 16, 3); // base16 - -А1.Е
+        if (not TEST_CHECK(p.GetNumber() == -17.875)) {
+            TEST_MSG("GetNumber() == %.1lf", p.GetNumber());
+        }
+    }
     {
         TEST_CASE("ConstructorString");
         TPNumber p = TPNumber("11", "2", "3");
@@ -378,9 +380,9 @@ void test_pnumber_setters() {
 
 void test_pnumber_to_string() {
     using namespace NPNumber;
-    TEST_CASE("TPNumber::default_()");
+    TEST_CASE("TPNumber default");
     {
-        TPNumber p = TPNumber::default_();
+        TPNumber p;
         TEST_CHECK(p.ToString() == "0");
         TEST_CHECK(p.GetRadix() == 10);
     }
@@ -404,6 +406,21 @@ void test_pnumber_to_string() {
             stringstream ss;
             ss << tmp;
             TEST_CHECK_(ss.str() == "0.0", "'%s' == '0.0'", ss.str().c_str());
+        }
+    }
+
+    {
+        TEST_CASE("TPNumber from string");
+        TPNumber p = TPNumber("-A1.E", "16", "3");
+        if (not TEST_CHECK(p.GetNumber() == -160.125000)) {
+            TEST_MSG("GetNumber() == %f", p.GetNumber());
+        }
+    }
+    {
+        TEST_CASE("TPNumber to valid string");
+        TPNumber p = TPNumber(-17.875, 16, 3);
+        if (not TEST_CHECK(p.ToString() == "-11.E00")) {
+            TEST_MSG("ToString() == %s", p.ToString().c_str());
         }
     }
 

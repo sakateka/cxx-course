@@ -117,8 +117,8 @@ namespace NProc {
         }
 
     private:
-        TPNumber leftOpAndResult = TPNumber::default_();
-        TPNumber rightOp = TPNumber::default_();
+        TPNumber leftOpAndResult;
+        TPNumber rightOp;
         TOperation operation = TOperation::None;
         std::string error = "";
     };
