@@ -6,6 +6,12 @@
 #include <vector>
 #include <functional>
 #include "acutest.h"
+
+// force test running
+#ifndef RUN_TESTS
+#define RUN_TESTS
+#endif // RUN_TESTS
+
 #include "fractional.cc"
 
 using namespace std;
@@ -138,9 +144,10 @@ void manualInOutDo() {
     cout << "TFrac sum: " << sum << endl;
 }
 
-using namespace std;
-
 TEST_LIST = {
+    // Fractional
+    {"fractional_constructor", test_fractional_construction},
+    {"fractional_operations", test_fractional_operations},
     {"test_output", test_InOutDo},
     {"InOutDo", manualInOutDo},
     {NULL, NULL}};
