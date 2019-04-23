@@ -32,8 +32,18 @@ namespace NFrac {
             std::istringstream s(frac);
             int n = numerator, d = denominator;
             s >> n;
-            s.ignore(1);
-            s >> d;
+            if (!s.eof()) {
+                char sym = s.peek();
+                if (sym == '/') {
+                    s.ignore(1);
+                    s >> d;
+                }
+            } else {
+                d = 1;
+            }
+            if (!s.eof() || s.fail()) {
+                throw std::invalid_argument(frac);
+            }
             *this = TFrac(n, d);
         }
 
