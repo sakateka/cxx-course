@@ -14,4 +14,4 @@ cover:
 	xdg-open $(TARGET).html
 
 clean:
-	@rm -vf *.html a.out *.bin *.profdata *.profraw
+	@rm -vf *.cc.html a.out *.bin *.profdata *.profraw
