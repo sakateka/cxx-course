@@ -97,7 +97,7 @@ namespace NSet {
         }
 
         string Get(size_t idx) const {
-            if (idx < _s.size() && idx >= 0) {
+            if (idx < _s.size()) {
                 auto start = _s.begin();
                 for (size_t i = 0; i < idx; i++) {
                     start++;
@@ -323,6 +323,7 @@ void test_get() {
 
     TEST_EXCEPTION(z.Get(5), out_of_range);
     TEST_EXCEPTION(z.Get(-1), out_of_range);
+    TEST_EXCEPTION(z.Get(-10), out_of_range);
 
     NSet::TSet empty;
     TEST_EXCEPTION(empty.Get(2), out_of_range);
