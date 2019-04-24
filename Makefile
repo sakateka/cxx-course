@@ -7,10 +7,11 @@ build:
 
 cover:
 	clang++ -fprofile-instr-generate -fcoverage-mapping $(TARGET) -o $(TARGET).bin
-	./$(TARGET).bin
-	llvm-profdata merge -sparse default.profraw -o default.profdata
-	llvm-cov show -format=html -ignore-filename-regex=acutest.h ./$(TARGET).bin -instr-profile=default.profdata > cover.html
-	xdg-open cover.html
+	LLVM_PROFILE_FILE="$(TARGET).profraw" ./$(TARGET).bin
+	llvm-profdata merge -sparse $(TARGET).profraw -o $(TARGET).profdata
+	llvm-cov show -format=html -ignore-filename-regex=acutest.h \
+		./$(TARGET).bin -instr-profile=$(TARGET).profdata > $(TARGET).html
+	xdg-open $(TARGET).html
 
 clean:
-	@rm -vf cover.html a.out *.bin default.profdata default.profraw
+	@rm -vf *.html a.out *.bin *.profdata *.profraw
