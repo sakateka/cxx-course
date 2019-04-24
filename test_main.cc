@@ -8,6 +8,7 @@
 #include "proc.cc"
 #include "complex.cc"
 #include "fractional.cc"
+#include "converter.cc"
 
 // acutest provide main func
 TEST_LIST = {
@@ -17,6 +18,7 @@ TEST_LIST = {
     {"pnumber_setters", test_pnumber_setters},
     {"pnumber_to_string", test_pnumber_to_string},
     {"pnumber_operations", test_pnumber_operations},
+    {"pnumber_fraction_carry", test_pnumber_fraction_carry},
     // TMemory
     {"pmemory_constructor", test_pmemory_constructor},
     {"pmemory_operations", test_pmemory_operations},
@@ -30,4 +32,6 @@ TEST_LIST = {
     // Fractional
     {"fractional_constructor", test_fractional_construction},
     {"fractional_operations", test_fractional_operations},
+    // Converter
+    {"converter_10_p_operations", TestNConverter::test_converter_10_p_operations},
     {NULL, NULL}};

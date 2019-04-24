@@ -1,6 +1,5 @@
 #ifndef PNUMBER_CC
 #define PNUMBER_CC
-#define TEST_NO_MAIN
 
 #include <algorithm>
 #include <cmath>
@@ -13,6 +12,9 @@
 #include <vector>
 
 namespace NPNumber {
+    static const char ALPHABET[] = "0123456789ABCDEF";
+    // double guaranteed precision is 15 digits
+    static const size_t DOUBLE_PRECISION = 15;
 
     class invalid_pnumber : public std::invalid_argument {
     public:
@@ -127,53 +129,18 @@ namespace NPNumber {
             }
             result.clear();
 
-            double positive_number = number < 0 ? -number : number;
+            double positive_number = std::abs(number);
 
-            static const char alphabet[] = "0123456789ABCDEF";
             int tmpN = (int)positive_number;
             double fdouble = (positive_number - (double)tmpN);
-            char fstring[17]; // 0.<double guaranteed precision 15 digits>
-            sprintf(fstring, "%.15f", fdouble);
-            std::string fs(fstring);
-            std::vector<int> fracVec;
-            transform(fs.begin() + 2 /*skip 0.*/, fs.end(),
-                      std::back_inserter(fracVec),
-                      [](char c) -> int { return (int)(c - '0'); });
-
-            fs.clear();
-            fs.resize(15, '0');
-            for (int i = 0;
-                 std::any_of(begin(fracVec), end(fracVec),
-                             [](int c) { return c != 0; }) &&
-                 i < 15;
-                 i++) {
-                int carry = 0;
-
-                for (int j = fracVec.size() - 1; j >= 0; j--) {
-                    int digit = fracVec[j] * radix + carry;
-                    carry = digit / 10;
-                    fracVec[j] = digit % 10;
-                }
-                fs[i] = alphabet[carry];
+            std::string fs = fractionToString(fdouble);
+            if (_doCarry) {
+                // probably valid only for positive numbers, skip by default
+                int carry = doFractionCarry(fs);
+                tmpN += carry;
             }
-            double carry = 0;
-            for (int i = 14; i >= precision; i--) {
-                carry = (double)(fs[i] - '0' + carry) >= (double)radix / 2.0 ? 1 : 0;
-            }
-            if (carry) {
-                for (int i = precision - 1; i >= 0; i--) {
-                    if (fs[i] == alphabet[radix - 1]) {
-                        fs[i] = '0';
-                    } else {
-                        fs[i] = alphabet[fs[i] - '0' + 1];
-                        carry = 0;
-                        break;
-                    }
-                }
-            }
-            tmpN += carry;
             do {
-                result += alphabet[tmpN % radix];
+                result += ALPHABET[tmpN % radix];
                 tmpN /= radix;
             } while (tmpN);
             std::reverse(result.begin(), result.end());
@@ -207,8 +174,71 @@ namespace NPNumber {
         void SetPrecisionAsStr(const std::string& ps) {
             precision = parse_precision(ps);
         }
+        void SetDoCarry() {
+            _doCarry = true;
+        }
 
     private:
+        std::string fractionToString(double fraction) const {
+            char fstring[DOUBLE_PRECISION + 2]; // +2 is leading 0.
+            sprintf(fstring, "%.15f", fraction);
+            std::string fs(fstring);
+            std::vector<int> fracVec;
+            transform(fs.begin() + 2 /*skip 0.*/, fs.end(),
+                      std::back_inserter(fracVec),
+                      [](char c) -> int { return (int)(c - '0'); });
+
+            fs.clear();
+            fs.resize(DOUBLE_PRECISION, '0');
+            for (size_t i = 0;
+                 std::any_of(begin(fracVec), end(fracVec),
+                             [](int c) { return c != 0; }) &&
+                 i < DOUBLE_PRECISION;
+                 i++) {
+                int carry = 0;
+
+                for (int j = fracVec.size() - 1; j >= 0; j--) {
+                    int digit = fracVec[j] * radix + carry;
+                    carry = digit / 10;
+                    fracVec[j] = digit % 10;
+                }
+                fs[i] = ALPHABET[carry];
+            }
+            return fs;
+        }
+
+        int doFractionCarry(std::string& fractionStr) const {
+            int carry = 0;
+            for (int i = DOUBLE_PRECISION - 1; i >= precision; i--) {
+                carry = (charToIdx(fractionStr[i]) + carry) >= radix / 2.0;
+            }
+            if (carry) {
+                for (int i = precision - 1; i >= 0; i--) {
+                    if (fractionStr[i] == ALPHABET[radix - 1]) {
+                        fractionStr[i] = '0';
+                    } else /* assert fractionStr[i] < ALPHABET[radix - 1] */ {
+                        int greaterIdx = charToIdx(fractionStr[i]) + 1;
+                        fractionStr[i] = ALPHABET[greaterIdx];
+                        carry = 0;
+                        break;
+                    }
+                }
+            }
+            return carry;
+        }
+
+        static int charToIdx(char c) {
+            int charIdx = c - '0';
+            if (charIdx > 9) {
+                // ord('0') = 48
+                // ord('0') - ord('0') = 0, ord('1') - ord('0') = 1 ...
+                // ord('A') = 65 ...
+                // ord('A') - ord('0') - 7 = 10, ord('B') - ord('0') -7 = 11 ...
+                charIdx -= 7;
+            }
+            return charIdx;
+        }
+
         static int validate_radix(int r) {
             if (r < 2 or r > 16) {
                 throw invalid_radix(std::to_string(r));
@@ -259,6 +289,7 @@ namespace NPNumber {
             return n;
         }
 
+        bool _doCarry = false;
         double number;
         int radix;
         int precision;
@@ -454,26 +485,26 @@ void test_pnumber_to_string() {
         };
         vector<Case> cases = {
             {15.9375, 16, 4, "F.F000"},
-            {15.9375, 15, 4, "10.E0E1"},
+            {15.9375, 15, 4, "10.E0E0"},
             {15.9375, 14, 4, "11.D1A7"},
-            {15.9375, 13, 4, "12.C259"},
+            {15.9375, 13, 4, "12.C258"},
             {15.9375, 12, 4, "13.B300"},
-            {15.9375, 11, 4, "14.A349"},
+            {15.9375, 11, 4, "14.A348"},
             {15.9375, 10, 4, "15.9375"},
-            {15.9375, 9, 4, "16.8384"},
+            {15.9375, 9, 4, "16.8383"},
             {15.9375, 8, 4, "17.7400"},
-            {15.9375, 7, 4, "21.6364"},
+            {15.9375, 7, 4, "21.6363"},
             {15.9375, 6, 4, "23.5343"},
-            {15.9375, 5, 4, "30.4321"},
+            {15.9375, 5, 4, "30.4320"},
             {15.9375, 4, 4, "33.3300"},
-            {15.9375, 3, 4, "120.2211"},
+            {15.9375, 3, 4, "120.2210"},
             {15.9375, 2, 4, "1111.1111"},
 
-            {42.55, 14, 8, "30.79B2B2B3"},
-            {42.55, 8, 8, "52.43146315"},
+            {42.55, 14, 8, "30.79B2B2B2"},
+            {42.55, 8, 8, "52.43146314"},
             {42.47, 7, 8, "60.32013201"},
-            {11.3, 16, 1, "B.5"},
-            {63.984375, 8, 0, "100"},
+            {11.3, 16, 1, "B.4"},
+            {63.984375, 8, 0, "77"},
             {63.0, 8, 0, "77"},
         };
 
@@ -574,6 +605,65 @@ void test_pnumber_operations() {
 
     TEST_CASE("Sqr");
     TEST_CHECK(TPNumber("-4", "10", "3").Sqr().GetNumber() == 16);
+}
+
+void test_pnumber_fraction_carry() {
+    using namespace NPNumber;
+    struct Case {
+        double n;
+        int r;
+        int b;
+        string expect;
+    };
+    vector<Case> cases = {
+        {15.9375, 16, 4, "F.F000"},
+        {15.9375, 15, 4, "10.E0E1"},
+        {15.9375, 14, 4, "11.D1A7"},
+        {15.9375, 13, 4, "12.C259"},
+        {15.9375, 12, 4, "13.B300"},
+        {15.9375, 11, 4, "14.A349"},
+        {15.9375, 10, 4, "15.9375"},
+        {15.9375, 9, 4, "16.8384"},
+        {15.9375, 8, 4, "17.7400"},
+        {15.9375, 7, 4, "21.6364"},
+        {15.9375, 6, 4, "23.5343"},
+        {15.9375, 5, 4, "30.4321"},
+        {15.9375, 4, 4, "33.3300"},
+        {15.9375, 3, 4, "120.2211"},
+        {15.9375, 2, 4, "1111.1111"},
+
+        {42.55, 14, 8, "30.79B2B2B3"},
+        {42.55, 8, 8, "52.43146315"},
+        {42.47, 7, 8, "60.32013201"},
+        {11.3, 16, 1, "B.5"},
+        {63.984375, 8, 0, "100"},
+        {63.0, 8, 0, "77"},
+    };
+
+    TEST_CASE("Positive with carry")
+    for (auto c : cases) {
+        TPNumber p = TPNumber(c.n, c.r, c.b);
+        p.SetDoCarry();
+        if (not TEST_CHECK(p.ToString() == c.expect)) {
+            TEST_MSG("%s -> %s != %s (expect)",
+                     p.Repr().c_str(),
+                     p.ToString().c_str(),
+                     c.expect.c_str());
+        }
+    }
+    TEST_CASE("Negative with carry")
+    for (auto c : cases) {
+        double n = -c.n;
+        string expect = "-" + c.expect;
+        TPNumber p = TPNumber(n, c.r, c.b);
+        p.SetDoCarry();
+        if (not TEST_CHECK(p.ToString() == expect)) {
+            TEST_MSG("%s-> %s != %s (expect)",
+                     p.Repr().c_str(),
+                     p.ToString().c_str(),
+                     expect.c_str());
+        }
+    }
 }
 
 #endif // #ifdef RUN_TESTS

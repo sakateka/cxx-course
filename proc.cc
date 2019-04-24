@@ -171,16 +171,17 @@ void test_proc_functions() {
         TProc p = TProc(2, 2);
         p.SetLeftOp(TPNumber(42.55, 14, 8));
         string leftOpStr = p.GetLeftOpRes().ToString();
-        TEST_CHECK_(leftOpStr == "30.79B2B2B3", "%s != 30.79B2B2B3", leftOpStr.c_str());
+        string expect = "30.79B2B2B2";
+        TEST_CHECK_(leftOpStr == expect, "%s != %s", leftOpStr.c_str(), expect.c_str());
 
         p.SetRightOp(TPNumber(4, 2, 2));
         TEST_CASE("Revert");
         p.FunctionRun(TFunction::Revert);
         TEST_CHECK(p.GetRightOp().GetNumber() == 0.25);
-        TEST_CHECK(p.GetLeftOpRes().ToString() == "30.79B2B2B3"); // unchanged
+        TEST_CHECK(p.GetLeftOpRes().ToString() == expect); // unchanged
         p.FunctionRun(TFunction::Revert);
         TEST_CHECK(p.GetRightOp().GetNumber() == 4);
-        TEST_CHECK(p.GetLeftOpRes().ToString() == "30.79B2B2B3"); // unchanged
+        TEST_CHECK(p.GetLeftOpRes().ToString() == expect); // unchanged
 
         TEST_CASE("Sqr");
         p.FunctionRun(TFunction::Sqr); // 4^2
