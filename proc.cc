@@ -1,9 +1,10 @@
 #ifndef PROC_CC
 #define PROC_CC
-#include "pmemory.cc"
-#include "pnumber.cc"
 #include <exception>
 #include <sstream>
+
+#include "pmemory.cc"
+#include "pnumber.cc"
 
 namespace NProc {
     using TPNumber = NPNumber::TPNumber;
@@ -18,7 +19,7 @@ namespace NProc {
 
     class TProc {
     public:
-        TProc(int r, int p) {
+        TProc(int r = 10, int p = 0) {
             Reset(r, p);
         }
 

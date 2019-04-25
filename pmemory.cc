@@ -1,8 +1,6 @@
 #ifndef PMEMORY_CC
 #define PMEMORY_CC
-#define TEST_NO_MAIN
 
-#include "pnumber.cc"
 #include <algorithm>
 #include <iostream>
 #include <map>
@@ -10,12 +8,14 @@
 #include <string>
 #include <vector>
 
+#include "pnumber.cc"
+
 namespace NMemory {
     using TPNumber = NPNumber::TPNumber;
 
     class TMemory {
     public:
-        TMemory(int radix, int precision)
+        TMemory(int radix = 10, int precision = 0)
             : number(TPNumber(0, radix, precision)) {
         }
 

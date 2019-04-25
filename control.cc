@@ -4,26 +4,32 @@
 #include "proc.cc"
 #include "pmemory.cc"
 #include "pnumber.cc"
+#include "history.cc"
 
 namespace NCtrl {
-    using TMemory = NMemory::TMemory;
-    using TPNumber = NPNumber::TPNumber;
 
-    enum struct TCtrlState { CStart,
-                             CEditing,
-                             FunDone,
-                             CValDone,
-                             CExpDone,
-                             COpChange,
-                             CError };
+    enum struct TState { Editing,
+                         Converted,
+                         Error };
 
     class TCtrl {
+    public:
+        explicit TCtrl() {
+        }
+
+        void DoCmd(int cmd) {
+        }
+
     private:
+        TState state = TState::Editing;
+        int radixIn = 10;
+        int radixOut = 10;
+
+        NHistory::THistory history;
+        NPNumber::TPNumber number;
+        NMemory::TMemory memory;
         NEditor::TEditor editor;
-        NProc::TProc processor;
-        TMemory memory;
-        TCtrlState state;
-        TPNumber number;
+        NProc::TProc proc;
     };
 }; // namespace NCtrl
 
