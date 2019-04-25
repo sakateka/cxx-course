@@ -10,6 +10,7 @@
 #include "fractional.cc"
 #include "converter.cc"
 #include "editor.cc"
+#include "history.cc"
 
 // acutest provide main func
 TEST_LIST = {
@@ -38,4 +39,6 @@ TEST_LIST = {
     {"converter_p_10_operations", TestNConverter::test_converter_p_10_operations},
     // Editor
     {"editor_operations", test_editor_operations},
+    // History
+    {"history", test_history},
     {NULL, NULL}};
