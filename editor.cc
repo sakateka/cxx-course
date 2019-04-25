@@ -2,12 +2,15 @@
 #define TEDITOR_CC
 #include <string>
 #include <stdexcept>
+#include "const.cc"
 
 namespace NEditor {
 
+    using NConst::ALPHABET;
+    using NConst::DOT;
+    using NConst::RADIX_MAX;
+    using NConst::ZERO;
     using namespace std;
-    const string ZERO = "0";
-    const string DOT = ".";
 
     class invalid_digit : public std::invalid_argument {
     public:
@@ -34,11 +37,10 @@ namespace NEditor {
         }
 
         string AddSymbol(int symbol) {
-            static const char alphabet[] = "0123456789ABCDEF";
-            if (symbol < 0 or symbol > 15) {
+            if (symbol < 0 or symbol >= RADIX_MAX) {
                 throw invalid_digit("Invalid p number " + to_string(symbol));
             }
-            str += alphabet[symbol];
+            str += ALPHABET[symbol];
             return str;
         }
 
@@ -68,11 +70,11 @@ namespace NEditor {
             return str;
         }
 
-        string ToString() const {
+        string Get() const {
             return str;
         }
 
-        string SetString(string s) {
+        string Set(string s) {
             str = s;
             return str;
         }

@@ -10,11 +10,13 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include "const.cc"
 
 namespace NPNumber {
-    static const char ALPHABET[] = "0123456789ABCDEF";
-    // double guaranteed precision is 15 digits
-    static const size_t DOUBLE_PRECISION = 15;
+    using NConst::ALPHABET;
+    using NConst::DOUBLE_PRECISION;
+    using NConst::RADIX_MAX;
+    using NConst::RADIX_MIN;
 
     class invalid_pnumber : public std::invalid_argument {
     public:
@@ -246,7 +248,7 @@ namespace NPNumber {
         }
 
         static int ValidateRadix(int r) {
-            if (r < 2 or r > 16) {
+            if (r < RADIX_MIN || r > RADIX_MAX) {
                 throw invalid_radix(std::to_string(r));
             }
             return r;
@@ -447,7 +449,7 @@ void test_pnumber_to_string() {
     }
     TEST_CASE("Zero");
     {
-        for (int i = 2; i <= 16; i++) {
+        for (int i = RADIX_MIN; i <= RADIX_MAX; i++) {
             TEST_CASE_("TPNumber(0, %i, 0)", i);
             TPNumber tmp = TPNumber(0, i, 0);
             TEST_CHECK_(tmp.ToString() == "0", "'%s' == '0'", tmp.ToString().c_str());
@@ -456,7 +458,7 @@ void test_pnumber_to_string() {
             ss << tmp;
             TEST_CHECK_(ss.str() == "0", "'%s' == '0'", ss.str().c_str());
         }
-        for (int i = 2; i <= 16; i++) {
+        for (int i = RADIX_MIN; i <= RADIX_MAX; i++) {
             TEST_CASE_("TPNumber(0, %i, 1)", i);
             TPNumber tmp = TPNumber(0, i, 1);
             TEST_CHECK_(tmp.ToString() == "0.0", "'%s' == '0.0'",
