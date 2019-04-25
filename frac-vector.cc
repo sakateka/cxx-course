@@ -83,6 +83,17 @@ void test_InOutDo() {
             TEST_MSG("Input output:%s", inOut.str().c_str());
         }
     }
+    TEST_CASE("Sum");
+    {
+        stringstream input("1/1 2/1 3/3");
+        stringstream inOut;
+        InOutDo<TFrac> t1;
+        t1.Input(input, inOut);
+        TEST_CHECK(t1.Sum() == TFrac(4, 1));
+
+        InOutDo<TFrac> t2;
+        TEST_CHECK(t2.Sum() == TFrac(0, 1));
+    }
     TEST_CASE("SortUp");
     {
         stringstream input("9/1 8/1 7/lkjsdf 7/3");
