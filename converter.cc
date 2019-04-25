@@ -3,6 +3,7 @@
 
 #include <string>
 #include <iostream>
+#include <algorithm>
 #include "pnumber.cc"
 #include <stdexcept>
 
@@ -39,13 +40,28 @@ namespace NConverter {
             return double(TPNumber::CharToIdx(ch));
         }
         //Преобразовать строку в число
-        static double convert(const std::string& pNum, int base, double weight = 0) {
-            return TPNumber(pNum, base, weight).GetNumber();
+        static double convert(const std::string& pNum, int base, double ignored = 0) {
+            auto firstNum = pNum.begin();
+            if (*firstNum == '-') {
+                firstNum++;
+            }
+            if (any_of(firstNum, pNum.end(), [&](int c) { return !isValidChar(c, base); })) {
+                throw std::invalid_argument(
+                    "Invalid pnumber '" + pNum + "' in base " + std::to_string(base));
+            }
+            return TPNumber::ParseNumber(pNum, base);
         }
         //Преобразовать из с.сч. с основанием р в с.сч. с основанием 10.
         static double dval(const std::string& pNum, int base) {
-            return convert(pNum, base);
+            double noMatter = 0;
+            return TPNumber(pNum, base, noMatter).GetNumber();
         }
+
+    private:
+        static bool isValidChar(char i, int base) {
+            int idx = TPNumber::CharToIdx(i);
+            return idx < base && ALPHABET[idx] == i;
+        };
     }; // class Conver_P_10
 
 } // namespace NConverter
@@ -195,11 +211,14 @@ namespace TestNConverter {
         TEST_CASE("char_To_num");
         {
             TEST_CHECK(conv.char_To_num('A') == 10);
+            for (ssize_t i = 0; i < 16; i++) {
+                TEST_CHECK(conv.char_To_num(NConverter::ALPHABET[i]) == i);
+            }
         }
-        TEST_CASE("convert");
+        TEST_CASE("dval");
         {
             for (auto& c : cases) {
-                double result = conv.convert(c.expect, c.radix);
+                double result = conv.dval(c.expect, c.radix);
                 TPNumber pn(result, c.radix, c.prec);
                 pn.SetDoCarry();
                 string backToStr = pn.ToString();
@@ -208,6 +227,16 @@ namespace TestNConverter {
                             "-> TPNumber(%f, %d, %d).ToString() -> '%s' (result)",
                             c.num, c.radix, c.prec, c.expect.c_str(),
                             result, pn.GetRadix(), pn.GetPrecision(), backToStr.c_str());
+            }
+        }
+        TEST_CASE("convert");
+        {
+            for (auto& c : cases) {
+                string pInt = c.expect.substr(0, c.expect.find("."));
+                double expect = TPNumber::Truncate(c.num, 0);
+                double result = conv.convert(pInt, c.radix);
+                TEST_CHECK_(result == expect, "Case %s -> %s: %0.1lf == %0.1lf",
+                            c.expect.c_str(), pInt.c_str(), result, expect);
             }
         }
     }

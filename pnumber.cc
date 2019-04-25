@@ -45,18 +45,18 @@ namespace NPNumber {
     public:
         TPNumber(double n = 0, int b = 10, int c = 0) {
             number = n;
-            radix = validateRadix(b);
-            precision = validatePrecision(c);
+            radix = ValidateRadix(b);
+            precision = ValidatePrecision(c);
         }
         TPNumber(const std::string& n, int b = 10, int c = 0) {
-            radix = validateRadix(b);
-            precision = validatePrecision(c);
-            number = parseNumber(n, radix);
+            radix = ValidateRadix(b);
+            precision = ValidatePrecision(c);
+            number = ParseNumber(n, radix);
         }
         TPNumber(const std::string& n, const std::string& b, const std::string& c) {
-            SetRadix(parseRadix(b));
-            precision = parsePrecision(c);
-            number = parseNumber(n, radix);
+            SetRadix(ParseRadix(b));
+            precision = ParsePrecision(c);
+            number = ParseNumber(n, radix);
         }
         friend std::ostream& operator<<(std::ostream& out, const TPNumber& p) {
             out << p.ToString();
@@ -128,7 +128,7 @@ namespace NPNumber {
         std::string ToString() const {
             double outNumber = number;
             if (radix == 10 && !_doCarry) {
-                outNumber = TPNumber::round(number, precision);
+                outNumber = Truncate(number, precision);
             }
             std::stringstream sresult;
             sresult << std::fixed << std::setprecision(precision) << outNumber;
@@ -174,16 +174,16 @@ namespace NPNumber {
         }
 
         void SetRadix(int r) {
-            radix = validateRadix(r);
+            radix = ValidateRadix(r);
         }
         void SetRadixAsStr(const std::string& rs) {
-            SetRadix(parseRadix(rs));
+            SetRadix(ParseRadix(rs));
         }
         void SetPrecision(int p) {
-            precision = validatePrecision(p);
+            precision = ValidatePrecision(p);
         }
         void SetPrecisionAsStr(const std::string& ps) {
-            precision = parsePrecision(ps);
+            precision = ParsePrecision(ps);
         }
         void SetDoCarry(bool v = true) {
             _doCarry = v;
@@ -201,8 +201,65 @@ namespace NPNumber {
             return charIdx;
         }
 
-    private:
-        static double round(double x, int n) {
+        static double ParseNumber(const std::string& ns, int base) {
+            char* nend;
+            double n = strtol(ns.c_str(), &nend, base);
+            if (*nend == '.' && *(++nend) != '\0') {
+                char* dot = nend;
+                double fractional = strtol(nend, &nend, base);
+                if (*nend == '\0') {
+                    fractional /= (double)pow(base, nend - dot);
+                    if (n < 0) { // negative number, so fraction too
+                        fractional = -fractional;
+                    }
+                    n += fractional;
+                }
+            }
+            if (*nend != '\0') {
+                throw invalid_pnumber(ns);
+            }
+            return n;
+        }
+
+        static int ParseRadix(const std::string& rs) {
+            if (rs.size() > 0 && rs[0] != '-') {
+                char* nend;
+                int r = strtol(rs.c_str(), &nend, 10);
+                if (*nend == '\0') {
+                    return ValidateRadix(r);
+                }
+            }
+            // failed to parse
+            throw invalid_radix(rs);
+        };
+
+        static int ParsePrecision(const std::string& ps) {
+            if (ps.size() > 0 && ps[0] != '-') {
+                char* nend;
+                int p = strtol(ps.c_str(), &nend, 10);
+                if (*nend == '\0') {
+                    return ValidatePrecision(p);
+                }
+            }
+            // failed to parse
+            throw invalid_precision(ps);
+        }
+
+        static int ValidateRadix(int r) {
+            if (r < 2 or r > 16) {
+                throw invalid_radix(std::to_string(r));
+            }
+            return r;
+        }
+
+        static int ValidatePrecision(int p) {
+            if (p < 0) {
+                throw invalid_precision(std::to_string(p));
+            }
+            return p;
+        }
+
+        static double Truncate(double x, int n) {
             if (x > 0) {
                 x = floor(x * pow(10, n)) / pow(10, n);
             } else if (x < 0) {
@@ -210,6 +267,8 @@ namespace NPNumber {
             }
             return x;
         }
+
+    private:
         std::string fractionToString(double fraction) const {
             char fstring[DOUBLE_PRECISION + 2]; // +2 is leading 0.
             sprintf(fstring, "%.15f", fraction);
@@ -256,60 +315,6 @@ namespace NPNumber {
                 }
             }
             return carry;
-        }
-
-        static int validateRadix(int r) {
-            if (r < 2 or r > 16) {
-                throw invalid_radix(std::to_string(r));
-            }
-            return r;
-        }
-        static int validatePrecision(int p) {
-            if (p < 0) {
-                throw invalid_precision(std::to_string(p));
-            }
-            return p;
-        }
-        static int parseRadix(const std::string& rs) {
-            if (rs.size() > 0 && rs[0] != '-') {
-                char* nend;
-                int r = strtol(rs.c_str(), &nend, 10);
-                if (*nend == '\0') {
-                    return validateRadix(r);
-                }
-            }
-            // failed to parse
-            throw invalid_radix(rs);
-        };
-        static int parsePrecision(const std::string& ps) {
-            if (ps.size() > 0 && ps[0] != '-') {
-                char* nend;
-                int p = strtol(ps.c_str(), &nend, 10);
-                if (*nend == '\0') {
-                    return validatePrecision(p);
-                }
-            }
-            // failed to parse
-            throw invalid_precision(ps);
-        }
-        static double parseNumber(const std::string& ns, int base) {
-            char* nend;
-            double n = strtol(ns.c_str(), &nend, base);
-            if (*nend == '.' && *(++nend) != '\0') {
-                char* dot = nend;
-                double fractional = strtol(nend, &nend, base);
-                if (*nend == '\0') {
-                    fractional /= (double)pow(base, nend - dot);
-                    if (n < 0) { // negative number, so fraction too
-                        fractional = -fractional;
-                    }
-                    n += fractional;
-                }
-            }
-            if (*nend != '\0') {
-                throw invalid_pnumber(ns);
-            }
-            return n;
         }
 
         bool _doCarry = false;
