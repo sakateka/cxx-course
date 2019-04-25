@@ -45,13 +45,18 @@ namespace NPNumber {
     public:
         TPNumber(double n = 0, int b = 10, int c = 0) {
             number = n;
-            radix = validate_radix(b);
+            radix = validateRadix(b);
             precision = validate_precision(c);
         }
+        TPNumber(const std::string& n, int b = 10, int c = 0) {
+            radix = validateRadix(b);
+            precision = validate_precision(c);
+            number = parseNumber(n, radix);
+        }
         TPNumber(const std::string& n, const std::string& b, const std::string& c) {
-            SetRadix(parse_radix(b));
-            precision = parse_precision(c);
-            number = parse_number(n, radix);
+            SetRadix(parseRadix(b));
+            precision = parsePrecision(c);
+            number = parseNumber(n, radix);
         }
         friend std::ostream& operator<<(std::ostream& out, const TPNumber& p) {
             out << p.ToString();
@@ -163,19 +168,31 @@ namespace NPNumber {
         }
 
         void SetRadix(int r) {
-            radix = validate_radix(r);
+            radix = validateRadix(r);
         }
         void SetRadixAsStr(const std::string& rs) {
-            SetRadix(parse_radix(rs));
+            SetRadix(parseRadix(rs));
         }
         void SetPrecision(int p) {
             precision = validate_precision(p);
         }
         void SetPrecisionAsStr(const std::string& ps) {
-            precision = parse_precision(ps);
+            precision = parsePrecision(ps);
         }
-        void SetDoCarry() {
-            _doCarry = true;
+        void SetDoCarry(bool v = true) {
+            _doCarry = v;
+        }
+
+        static int CharToIdx(char c) {
+            int charIdx = c - '0';
+            if (charIdx > 9) {
+                // ord('0') = 48
+                // ord('0') - ord('0') = 0, ord('1') - ord('0') = 1 ...
+                // ord('A') = 65 ...
+                // ord('A') - ord('0') - 7 = 10, ord('B') - ord('0') -7 = 11 ...
+                charIdx -= 7;
+            }
+            return charIdx;
         }
 
     private:
@@ -210,14 +227,14 @@ namespace NPNumber {
         int doFractionCarry(std::string& fractionStr) const {
             int carry = 0;
             for (int i = DOUBLE_PRECISION - 1; i >= precision; i--) {
-                carry = (charToIdx(fractionStr[i]) + carry) >= radix / 2.0;
+                carry = (CharToIdx(fractionStr[i]) + carry) >= radix / 2.0;
             }
             if (carry) {
                 for (int i = precision - 1; i >= 0; i--) {
                     if (fractionStr[i] == ALPHABET[radix - 1]) {
                         fractionStr[i] = '0';
                     } else /* assert fractionStr[i] < ALPHABET[radix - 1] */ {
-                        int greaterIdx = charToIdx(fractionStr[i]) + 1;
+                        int greaterIdx = CharToIdx(fractionStr[i]) + 1;
                         fractionStr[i] = ALPHABET[greaterIdx];
                         carry = 0;
                         break;
@@ -227,19 +244,7 @@ namespace NPNumber {
             return carry;
         }
 
-        static int charToIdx(char c) {
-            int charIdx = c - '0';
-            if (charIdx > 9) {
-                // ord('0') = 48
-                // ord('0') - ord('0') = 0, ord('1') - ord('0') = 1 ...
-                // ord('A') = 65 ...
-                // ord('A') - ord('0') - 7 = 10, ord('B') - ord('0') -7 = 11 ...
-                charIdx -= 7;
-            }
-            return charIdx;
-        }
-
-        static int validate_radix(int r) {
+        static int validateRadix(int r) {
             if (r < 2 or r > 16) {
                 throw invalid_radix(std::to_string(r));
             }
@@ -251,18 +256,18 @@ namespace NPNumber {
             }
             return p;
         }
-        static int parse_radix(const std::string& rs) {
+        static int parseRadix(const std::string& rs) {
             if (rs.size() > 0 && rs[0] != '-') {
                 char* nend;
                 int r = strtol(rs.c_str(), &nend, 10);
                 if (*nend == '\0') {
-                    return validate_radix(r);
+                    return validateRadix(r);
                 }
             }
             // failed to parse
             throw invalid_radix(rs);
         };
-        static int parse_precision(const std::string& ps) {
+        static int parsePrecision(const std::string& ps) {
             if (ps.size() > 0 && ps[0] != '-') {
                 char* nend;
                 int p = strtol(ps.c_str(), &nend, 10);
@@ -273,7 +278,7 @@ namespace NPNumber {
             // failed to parse
             throw invalid_precision(ps);
         }
-        static double parse_number(const std::string& ns, int base) {
+        static double parseNumber(const std::string& ns, int base) {
             char* nend;
             double n = strtol(ns.c_str(), &nend, base);
             if (*nend == '.' && *(++nend) != '\0') {

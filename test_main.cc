@@ -34,4 +34,5 @@ TEST_LIST = {
     {"fractional_operations", test_fractional_operations},
     // Converter
     {"converter_10_p_operations", TestNConverter::test_converter_10_p_operations},
+    // WIP {"converter_p_10_operations", TestNConverter::test_converter_p_10_operations},
     {NULL, NULL}};
