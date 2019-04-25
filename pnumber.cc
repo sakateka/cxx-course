@@ -13,7 +13,6 @@
 #include "const.cc"
 
 namespace NPNumber {
-    using NConst::ALPHABET;
     using NConst::DOUBLE_PRECISION;
     using NConst::RADIX_MAX;
     using NConst::RADIX_MIN;
@@ -153,7 +152,7 @@ namespace NPNumber {
                 tmpN += carry;
             }
             do {
-                result += ALPHABET[tmpN % radix];
+                result += NConst::ALPHABET[tmpN % radix];
                 tmpN /= radix;
             } while (tmpN);
             std::reverse(result.begin(), result.end());
@@ -189,18 +188,6 @@ namespace NPNumber {
         }
         void SetDoCarry(bool v = true) {
             _doCarry = v;
-        }
-
-        static int CharToIdx(char c) {
-            int charIdx = c - '0';
-            if (charIdx > 9) {
-                // ord('0') = 48
-                // ord('0') - ord('0') = 0, ord('1') - ord('0') = 1 ...
-                // ord('A') = 65 ...
-                // ord('A') - ord('0') - 7 = 10, ord('B') - ord('0') -7 = 11 ...
-                charIdx -= 7;
-            }
-            return charIdx;
         }
 
         static double ParseNumber(const std::string& ns, int base) {
@@ -294,7 +281,7 @@ namespace NPNumber {
                     carry = digit / 10;
                     fracVec[j] = digit % 10;
                 }
-                fs[i] = ALPHABET[carry];
+                fs[i] = NConst::ALPHABET[carry];
             }
             return fs;
         }
@@ -302,15 +289,15 @@ namespace NPNumber {
         int doFractionCarry(std::string& fractionStr) const {
             int carry = 0;
             for (int i = DOUBLE_PRECISION - 1; i >= precision; i--) {
-                carry = (CharToIdx(fractionStr[i]) + carry) >= radix / 2.0;
+                carry = (NConst::CharToIdx(fractionStr[i]) + carry) >= radix / 2.0;
             }
             if (carry) {
                 for (int i = precision - 1; i >= 0; i--) {
-                    if (fractionStr[i] == ALPHABET[radix - 1]) {
+                    if (fractionStr[i] == NConst::ALPHABET[radix - 1]) {
                         fractionStr[i] = '0';
-                    } else /* assert fractionStr[i] < ALPHABET[radix - 1] */ {
-                        int greaterIdx = CharToIdx(fractionStr[i]) + 1;
-                        fractionStr[i] = ALPHABET[greaterIdx];
+                    } else /* assert fractionStr[i] < NConst::ALPHABET[radix - 1] */ {
+                        int greaterIdx = NConst::CharToIdx(fractionStr[i]) + 1;
+                        fractionStr[i] = NConst::ALPHABET[greaterIdx];
                         carry = 0;
                         break;
                     }

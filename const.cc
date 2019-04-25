@@ -11,5 +11,23 @@ namespace NConst {
     static const size_t DOUBLE_PRECISION = 15;
     static const int RADIX_MIN = 2;
     static const int RADIX_MAX = 16;
+
+    static int CharToIdx(char c) {
+        int charIdx = c - '0';
+        if (charIdx > 9) {
+            // ord('0') = 48
+            // ord('0') - ord('0') = 0, ord('1') - ord('0') = 1 ...
+            // ord('A') = 65 ...
+            // ord('A') - ord('0') - 7 = 10, ord('B') - ord('0') -7 = 11 ...
+            charIdx -= 7;
+        }
+        return charIdx;
+    }
+
+    static bool IsValidChar(char i, int base) {
+        int idx = CharToIdx(i);
+        return idx < base && ALPHABET[idx] == i;
+    };
+
 } // namespace NConst
 #endif // #ifndef CONST_CC

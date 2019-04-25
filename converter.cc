@@ -4,11 +4,12 @@
 #include <string>
 #include <iostream>
 #include <algorithm>
-#include "pnumber.cc"
 #include <stdexcept>
 
+#include "pnumber.cc"
+#include "const.cc"
+
 namespace NConverter {
-    using NPNumber::ALPHABET;
     using NPNumber::TPNumber;
     class Conver_10_P {
     public:
@@ -17,7 +18,7 @@ namespace NConverter {
             if (0 > n || n > 15) {
                 throw std::out_of_range("Value out of range: " + std::to_string(n));
             }
-            return ALPHABET[n];
+            return NConst::ALPHABET[n];
         }
         //Преобразовать десятичное целое в с.сч. с основанием р.
         static std::string int_to_P(int n, int p) {
@@ -37,7 +38,7 @@ namespace NConverter {
     public:
         //Преобразовать цифру в число.
         static double char_To_num(char ch) {
-            return double(TPNumber::CharToIdx(ch));
+            return double(NConst::CharToIdx(ch));
         }
         //Преобразовать строку в число
         static double convert(const std::string& pNum, int base, double ignored = 0) {
@@ -45,7 +46,7 @@ namespace NConverter {
             if (*firstNum == '-') {
                 firstNum++;
             }
-            if (any_of(firstNum, pNum.end(), [&](int c) { return !isValidChar(c, base); })) {
+            if (any_of(firstNum, pNum.end(), [&](int c) { return !NConst::IsValidChar(c, base); })) {
                 throw std::invalid_argument(
                     "Invalid pnumber '" + pNum + "' in base " + std::to_string(base));
             }
@@ -57,11 +58,6 @@ namespace NConverter {
             return TPNumber(pNum, base, noMatter).GetNumber();
         }
 
-    private:
-        static bool isValidChar(char i, int base) {
-            int idx = TPNumber::CharToIdx(i);
-            return idx < base && ALPHABET[idx] == i;
-        };
     }; // class Conver_P_10
 
 } // namespace NConverter
@@ -179,7 +175,7 @@ namespace TestNConverter {
             TEST_CHECK(conv.int_to_Char(1) == '1');
             // ...
             for (int i = 0; i < 16; i++) {
-                char expect = NPNumber::ALPHABET[i];
+                char expect = NConst::ALPHABET[i];
                 char c = conv.int_to_Char(i);
                 TEST_CHECK_(c == expect, "%c == %c", c, expect);
             }
@@ -212,7 +208,7 @@ namespace TestNConverter {
         {
             TEST_CHECK(conv.char_To_num('A') == 10);
             for (ssize_t i = 0; i < 16; i++) {
-                TEST_CHECK(conv.char_To_num(NConverter::ALPHABET[i]) == i);
+                TEST_CHECK(conv.char_To_num(NConst::ALPHABET[i]) == i);
             }
         }
         TEST_CASE("dval");

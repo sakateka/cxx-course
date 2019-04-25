@@ -9,6 +9,7 @@
 #include "complex.cc"
 #include "fractional.cc"
 #include "converter.cc"
+#include "editor.cc"
 
 // acutest provide main func
 TEST_LIST = {
@@ -35,4 +36,6 @@ TEST_LIST = {
     // Converter
     {"converter_10_p_operations", TestNConverter::test_converter_10_p_operations},
     {"converter_p_10_operations", TestNConverter::test_converter_p_10_operations},
+    // Editor
+    {"editor_operations", test_editor_operations},
     {NULL, NULL}};

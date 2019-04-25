@@ -182,7 +182,21 @@ void test_fractional_construction() {
         TEST_CHECK(r.GetNumerator() == 0 && r.GetDenominator() == 1);
     }
     TEST_CASE("Illegal arguments");
-    TEST_EXCEPTION(TFrac r(1, 0), invalid_argument);
+    {
+        TEST_EXCEPTION(TFrac r(1, 0), invalid_argument);
+    }
+
+    TEST_CASE("ConstructorString");
+    {
+        TEST_CHECK(TFrac("0/10") == TFrac(0, 1));
+        TEST_CHECK(TFrac("5/10") == TFrac(1, 2));
+        TEST_CHECK(TFrac("5/") == TFrac(5, 1));
+        TEST_CHECK(TFrac("5") == TFrac(5, 1));
+        TEST_EXCEPTION(TFrac("9/10tr"), invalid_argument);
+        TEST_EXCEPTION(TFrac("/10"), invalid_argument);
+        TEST_EXCEPTION(TFrac("/"), invalid_argument);
+        TEST_EXCEPTION(TFrac("bad"), invalid_argument);
+    }
 }
 
 void test_fractional_operations() {
