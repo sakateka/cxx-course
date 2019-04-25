@@ -197,8 +197,11 @@ void test_fractional_operations() {
     {
         TFrac a(2, 3);
         TFrac b(4, 3);
-        TFrac c = a + b;
-        TEST_CHECK(c == TFrac(2, 1));
+        TEST_CHECK(a + b == TFrac(2, 1));
+
+        TFrac c(1, 2);
+        TFrac d(1, 2);
+        TEST_CHECK(c + d == TFrac(1, 1));
     }
 
     TEST_CASE("Sub");
