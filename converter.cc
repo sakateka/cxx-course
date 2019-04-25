@@ -238,6 +238,8 @@ namespace TestNConverter {
                 TEST_CHECK_(result == expect, "Case %s -> %s: %0.1lf == %0.1lf",
                             c.expect.c_str(), pInt.c_str(), result, expect);
             }
+            TEST_EXCEPTION(conv.convert("F", 10), invalid_argument);
+            TEST_EXCEPTION(conv.convert("3", 3), invalid_argument);
         }
     }
 } // namespace TestNConverter
