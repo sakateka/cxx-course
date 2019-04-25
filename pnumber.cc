@@ -10,6 +10,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+
 #include "const.cc"
 
 namespace NPNumber {
@@ -49,11 +50,21 @@ namespace NPNumber {
             radix = ValidateRadix(b);
             precision = ValidatePrecision(c);
         }
-        TPNumber(const std::string& n, int b = 10, int c = 0) {
+
+        TPNumber(const std::string& n, int b = 10, int c = -1) {
+            if (c == -1) {
+                auto pos = n.rfind('.');
+                if (pos < n.size()) {
+                    c = n.size() - (pos + 1 /*skip dot*/);
+                } else {
+                    c = 0;
+                }
+            }
             radix = ValidateRadix(b);
             precision = ValidatePrecision(c);
             number = ParseNumber(n, radix);
         }
+
         TPNumber(const std::string& n, const std::string& b, const std::string& c) {
             SetRadix(ParseRadix(b));
             precision = ParsePrecision(c);
@@ -322,8 +333,8 @@ using namespace std;
 //
 void test_pnumber_constructor() {
     using namespace NPNumber;
+    TEST_CASE("ConstructorNumber");
     {
-        TEST_CASE("ConstructorNumber");
         TPNumber p = TPNumber(11.3, 16, 1);
         TEST_CHECK(p.GetNumber() == 11.3);
         TEST_CHECK(p.GetRadix() == 16);
@@ -332,15 +343,15 @@ void test_pnumber_constructor() {
         p = TPNumber(-11.3, 16, 1);
         TEST_CHECK(p.GetNumber() == -11.3);
     }
+    TEST_CASE("ConstructorNumber negative number");
     {
-        TEST_CASE("ConstructorNumber negative number");
         TPNumber p = TPNumber(-17.875, 16, 3); // base16 - -А1.Е
         if (not TEST_CHECK(p.GetNumber() == -17.875)) {
             TEST_MSG("GetNumber() == %.1lf", p.GetNumber());
         }
     }
+    TEST_CASE("ConstructorString");
     {
-        TEST_CASE("ConstructorString");
         TPNumber p = TPNumber("11", "2", "3");
         if (not TEST_CHECK(p.GetNumber() == 3.0)) {
             TEST_MSG("GetNumber() == %.1lf", p.GetNumber());
@@ -349,26 +360,34 @@ void test_pnumber_constructor() {
         TEST_CHECK(p.GetPrecisionAsStr() == "3");
     }
 
+    TEST_CASE("ConstructorString with fractional part");
     {
-        TEST_CASE("ConstructorString with fractional part");
         TPNumber p = TPNumber("11.11", "2", "3");
         if (not TEST_CHECK(p.GetNumber() == 3.75)) {
             TEST_MSG("GetNumber() == %lf", p.GetNumber());
         }
     }
+    TEST_CASE("ConstructorString number ends with dot");
     {
-        TEST_CASE("ConstructorString number ends with dot");
         TPNumber p = TPNumber("100.", "2", "3");
         if (not TEST_CHECK(p.GetNumber() == 4.0)) {
             TEST_MSG("GetNumber() == %.1lf", p.GetNumber());
         }
     }
+    TEST_CASE("ConstructorString negative number");
     {
-        TEST_CASE("ConstructorString negative number");
         TPNumber p = TPNumber("-f", "16", "3");
         if (not TEST_CHECK(p.GetNumber() == -15.0)) {
             TEST_MSG("GetNumber() == %.1lf", p.GetNumber());
         }
+    }
+    TEST_CASE("ConstructorString autodetect precision");
+    {
+        TEST_CHECK(TPNumber("-F10.EF2", 16).GetPrecision() == 3);
+        TEST_CHECK(TPNumber("10.3227").GetPrecision() == 4);
+        TEST_CHECK(TPNumber("10.1").GetPrecision() == 1);
+        TEST_CHECK(TPNumber("10.").GetPrecision() == 0);
+        TEST_CHECK(TPNumber("10").GetPrecision() == 0);
     }
 }
 
