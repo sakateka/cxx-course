@@ -46,11 +46,11 @@ namespace NPNumber {
         TPNumber(double n = 0, int b = 10, int c = 0) {
             number = n;
             radix = validateRadix(b);
-            precision = validate_precision(c);
+            precision = validatePrecision(c);
         }
         TPNumber(const std::string& n, int b = 10, int c = 0) {
             radix = validateRadix(b);
-            precision = validate_precision(c);
+            precision = validatePrecision(c);
             number = parseNumber(n, radix);
         }
         TPNumber(const std::string& n, const std::string& b, const std::string& c) {
@@ -126,15 +126,21 @@ namespace NPNumber {
         }
 
         std::string ToString() const {
+            double outNumber = number;
+            if (radix == 10 && !_doCarry) {
+                outNumber = TPNumber::round(number, precision);
+            }
             std::stringstream sresult;
-            sresult << std::fixed << std::setprecision(precision) << number;
+            sresult << std::fixed << std::setprecision(precision) << outNumber;
             std::string result = sresult.str();
-            if (radix == 10 || std::string(result).find("inf") != std::string::npos) {
+            if (radix == 10 ||
+                std::string(result).find("inf") != std::string::npos ||
+                std::string(result).find("nan") != std::string::npos) {
                 return result;
             }
             result.clear();
 
-            double positive_number = std::abs(number);
+            double positive_number = std::abs(outNumber);
 
             int tmpN = (int)positive_number;
             double fdouble = (positive_number - (double)tmpN);
@@ -150,7 +156,7 @@ namespace NPNumber {
             } while (tmpN);
             std::reverse(result.begin(), result.end());
 
-            if (number < 0) {
+            if (outNumber < 0) {
                 result = "-" + result;
             }
             if (precision > 0) {
@@ -174,7 +180,7 @@ namespace NPNumber {
             SetRadix(parseRadix(rs));
         }
         void SetPrecision(int p) {
-            precision = validate_precision(p);
+            precision = validatePrecision(p);
         }
         void SetPrecisionAsStr(const std::string& ps) {
             precision = parsePrecision(ps);
@@ -196,6 +202,14 @@ namespace NPNumber {
         }
 
     private:
+        static double round(double x, int n) {
+            if (x > 0) {
+                x = floor(x * pow(10, n)) / pow(10, n);
+            } else if (x < 0) {
+                x = ceil(x * pow(10, n)) / pow(10, n);
+            }
+            return x;
+        }
         std::string fractionToString(double fraction) const {
             char fstring[DOUBLE_PRECISION + 2]; // +2 is leading 0.
             sprintf(fstring, "%.15f", fraction);
@@ -250,7 +264,7 @@ namespace NPNumber {
             }
             return r;
         }
-        static int validate_precision(int p) {
+        static int validatePrecision(int p) {
             if (p < 0) {
                 throw invalid_precision(std::to_string(p));
             }
@@ -272,7 +286,7 @@ namespace NPNumber {
                 char* nend;
                 int p = strtol(ps.c_str(), &nend, 10);
                 if (*nend == '\0') {
-                    return validate_precision(p);
+                    return validatePrecision(p);
                 }
             }
             // failed to parse
@@ -285,7 +299,11 @@ namespace NPNumber {
                 char* dot = nend;
                 double fractional = strtol(nend, &nend, base);
                 if (*nend == '\0') {
-                    n += fractional / (double)pow(base, nend - dot);
+                    fractional /= (double)pow(base, nend - dot);
+                    if (n < 0) { // negative number, so fraction too
+                        fractional = -fractional;
+                    }
+                    n += fractional;
                 }
             }
             if (*nend != '\0') {
@@ -448,9 +466,8 @@ void test_pnumber_to_string() {
     {
         TEST_CASE("TPNumber from string");
         TPNumber p = TPNumber("-A1.E", "16", "3");
-        if (not TEST_CHECK(p.GetNumber() == -160.125000)) {
-            TEST_MSG("GetNumber() == %f", p.GetNumber());
-        }
+        double expect = -161.875;
+        TEST_CHECK_(p.GetNumber() == expect, "%f == %f", p.GetNumber(), expect);
     }
     {
         TEST_CASE("TPNumber to valid string");
