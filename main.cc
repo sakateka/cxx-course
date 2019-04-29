@@ -14,7 +14,7 @@ wxIMPLEMENT_APP(MyApp);
 
 bool MyApp::OnInit() {
     Ui* ui = new Ui();
-    ui->UpdateControls();
+    ui->Init();
     ui->Show(true);
     return true;
 }

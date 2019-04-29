@@ -9,6 +9,7 @@
 
 #include <wx/artprov.h>
 #include <wx/xrc/xmlres.h>
+#include <wx/cshelp.h>
 #include <wx/string.h>
 #include <wx/bitmap.h>
 #include <wx/image.h>
@@ -44,19 +45,19 @@ class ConverterFrame : public wxFrame
 		wxMenuBar* m_mainMenuBar;
 		wxMenu* m_main;
 		wxMenu* m_help;
-		wxTextCtrl* m_textCtrl1;
+		wxTextCtrl* m_sourceNumber;
 		wxStaticText* m_staticText1;
 		wxStaticText* m_staticText5;
 		wxStaticText* m_staticText6;
 		wxSlider* m_sourceRadix;
-		wxTextCtrl* m_textCtrl11;
+		wxTextCtrl* m_outputNumber;
 		wxStaticText* m_staticText11;
 		wxStaticText* m_staticText7;
-		wxChoice* m_choice1;
+		wxChoice* m_outputPrecision;
 		wxStaticText* m_staticText4;
 		wxStaticText* m_staticText8;
 		wxStaticText* m_staticText9;
-		wxSlider* m_slider11;
+		wxSlider* m_outputRadix;
 		wxButton* m_button0;
 		wxButton* m_button1;
 		wxButton* m_button2;
@@ -76,15 +77,23 @@ class ConverterFrame : public wxFrame
 		wxButton* m_buttonDot;
 		wxButton* m_buttonBS;
 		wxButton* m_buttonCE;
-		wxButton* m_buttonDo;
+		wxButton* m_buttonSign;
 		wxStatusBar* m_statusBar1;
 
 		// Virtual event handlers, overide them in your derived class
 		virtual void OnHistory( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnExit( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnAbout( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnSourceNumberTextUpdate( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnSourceNumber( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnSliderSourceRadix( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnPrecisionChoice( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnSliderOutputRadix( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnNumberClick( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnDot( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnBackspace( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnClear( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnSign( wxCommandEvent& event ) { event.Skip(); }
 
 
 	public:

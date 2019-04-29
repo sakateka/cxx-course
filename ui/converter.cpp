@@ -7,6 +7,23 @@
 
 #include "converter.h"
 
+// Using the construction of a static object to ensure that the help provider is set
+// wx Manages the most recent HelpProvider passed to ::Set, but not the previous ones
+// If ::Set gets called more than once, the previous one is returned and should be deleted
+class wxFBContextSensitiveHelpSetter
+{
+public:
+wxFBContextSensitiveHelpSetter()
+{
+wxSimpleHelpProvider* help = new wxSimpleHelpProvider();
+wxHelpProvider* old = wxHelpProvider::Set( help );
+if (old != 0){
+delete old;
+}
+}
+};
+
+static wxFBContextSensitiveHelpSetter s_wxFBSetTheHelpProvider;
 ///////////////////////////////////////////////////////////////////////////
 
 ConverterFrame::ConverterFrame( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxFrame( parent, id, title, pos, size, style )
@@ -37,11 +54,11 @@ ConverterFrame::ConverterFrame( wxWindow* parent, wxWindowID id, const wxString&
 	wxBoxSizer* bSizer1;
 	bSizer1 = new wxBoxSizer( wxVERTICAL );
 
-	m_textCtrl1 = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_RIGHT );
-	m_textCtrl1->SetToolTip( wxT("Source Number") );
-	m_textCtrl1->SetHelpText( wxT("Set Srource number") );
+	m_sourceNumber = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER|wxTE_RIGHT );
+	m_sourceNumber->SetToolTip( wxT("Source Number") );
+	m_sourceNumber->SetHelpText( wxT("Set Srource number") );
 
-	bSizer1->Add( m_textCtrl1, 0, wxALL|wxEXPAND|wxALIGN_CENTER_HORIZONTAL, 5 );
+	bSizer1->Add( m_sourceNumber, 0, wxALL|wxEXPAND|wxALIGN_CENTER_HORIZONTAL, 5 );
 
 	wxGridSizer* gSizer10;
 	gSizer10 = new wxGridSizer( 1, 3, 0, 0 );
@@ -67,11 +84,11 @@ ConverterFrame::ConverterFrame( wxWindow* parent, wxWindowID id, const wxString&
 
 	bSizer1->Add( m_sourceRadix, 0, wxALL|wxEXPAND, 2 );
 
-	m_textCtrl11 = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_READONLY|wxTE_RIGHT );
-	m_textCtrl11->SetToolTip( wxT("Output Number") );
-	m_textCtrl11->SetHelpText( wxT("Output Converted Number") );
+	m_outputNumber = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_READONLY|wxTE_RIGHT );
+	m_outputNumber->SetToolTip( wxT("Output Number") );
+	m_outputNumber->SetHelpText( wxT("Output Converted Number") );
 
-	bSizer1->Add( m_textCtrl11, 0, wxALL|wxALIGN_CENTER_HORIZONTAL|wxEXPAND, 5 );
+	bSizer1->Add( m_outputNumber, 0, wxALL|wxALIGN_CENTER_HORIZONTAL|wxEXPAND, 5 );
 
 	wxGridSizer* gSizer11;
 	gSizer11 = new wxGridSizer( 2, 3, 0, 10 );
@@ -84,14 +101,14 @@ ConverterFrame::ConverterFrame( wxWindow* parent, wxWindowID id, const wxString&
 	m_staticText7->Wrap( -1 );
 	gSizer11->Add( m_staticText7, 0, wxALL, 5 );
 
-	wxString m_choice1Choices[] = { wxT("0"), wxT("1"), wxT("2"), wxT("3"), wxT("4"), wxT("5"), wxT("6"), wxT("7"), wxT("8"), wxT("9"), wxT("10"), wxT("11"), wxT("12"), wxT("13"), wxT("14"), wxT("15") };
-	int m_choice1NChoices = sizeof( m_choice1Choices ) / sizeof( wxString );
-	m_choice1 = new wxChoice( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, m_choice1NChoices, m_choice1Choices, 0 );
-	m_choice1->SetSelection( 10 );
-	m_choice1->SetToolTip( wxT("Set Output Precision") );
-	m_choice1->SetHelpText( wxT("Set Output Precision") );
+	wxString m_outputPrecisionChoices[] = { wxT("0"), wxT("1"), wxT("2"), wxT("3"), wxT("4"), wxT("5"), wxT("6"), wxT("7"), wxT("8"), wxT("9"), wxT("10"), wxT("11"), wxT("12"), wxT("13"), wxT("14"), wxT("15") };
+	int m_outputPrecisionNChoices = sizeof( m_outputPrecisionChoices ) / sizeof( wxString );
+	m_outputPrecision = new wxChoice( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, m_outputPrecisionNChoices, m_outputPrecisionChoices, 0 );
+	m_outputPrecision->SetSelection( 3 );
+	m_outputPrecision->SetToolTip( wxT("Set Output Precision") );
+	m_outputPrecision->SetHelpText( wxT("Set Output Precision") );
 
-	gSizer11->Add( m_choice1, 1, wxALIGN_RIGHT|wxALL, 0 );
+	gSizer11->Add( m_outputPrecision, 1, wxALIGN_RIGHT|wxALL, 0 );
 
 	m_staticText4 = new wxStaticText( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
 	m_staticText4->Wrap( -1 );
@@ -108,11 +125,11 @@ ConverterFrame::ConverterFrame( wxWindow* parent, wxWindowID id, const wxString&
 
 	bSizer1->Add( gSizer11, 0, wxEXPAND, 0 );
 
-	m_slider11 = new wxSlider( this, wxID_ANY, 16, 2, 16, wxDefaultPosition, wxDefaultSize, wxSL_AUTOTICKS|wxSL_HORIZONTAL|wxSL_LABELS|wxSL_VALUE_LABEL );
-	m_slider11->SetToolTip( wxT("Set Output Radix") );
-	m_slider11->SetHelpText( wxT("Set Output Radix") );
+	m_outputRadix = new wxSlider( this, wxID_ANY, 16, 2, 16, wxDefaultPosition, wxDefaultSize, wxSL_AUTOTICKS|wxSL_HORIZONTAL|wxSL_LABELS|wxSL_VALUE_LABEL );
+	m_outputRadix->SetToolTip( wxT("Set Output Radix") );
+	m_outputRadix->SetHelpText( wxT("Set Output Radix") );
 
-	bSizer1->Add( m_slider11, 0, wxALL|wxEXPAND, 2 );
+	bSizer1->Add( m_outputRadix, 0, wxALL|wxEXPAND, 2 );
 
 	wxGridSizer* gSizer8;
 	gSizer8 = new wxGridSizer( 5, 4, 0, 0 );
@@ -183,11 +200,11 @@ ConverterFrame::ConverterFrame( wxWindow* parent, wxWindowID id, const wxString&
 
 	gSizer8->Add( m_buttonCE, 0, wxALL, 5 );
 
-	m_buttonDo = new wxButton( this, wxID_ANY, wxT("DO"), wxDefaultPosition, wxDefaultSize, 0 );
-	m_buttonDo->SetToolTip( wxT("Convert") );
-	m_buttonDo->SetHelpText( wxT("Do Conversion") );
+	m_buttonSign = new wxButton( this, wxID_ANY, wxT("-"), wxDefaultPosition, wxDefaultSize, 0 );
+	m_buttonSign->SetToolTip( wxT("Change sign") );
+	m_buttonSign->SetHelpText( wxT("Change the sign of a number") );
 
-	gSizer8->Add( m_buttonDo, 0, wxALL, 5 );
+	gSizer8->Add( m_buttonSign, 0, wxALL, 5 );
 
 
 	bSizer1->Add( gSizer8, 0, wxALIGN_CENTER|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL|wxALL|wxEXPAND, 1 );
@@ -203,7 +220,11 @@ ConverterFrame::ConverterFrame( wxWindow* parent, wxWindowID id, const wxString&
 	m_main->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( ConverterFrame::OnHistory ), this, m_menuHistory->GetId());
 	m_main->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( ConverterFrame::OnExit ), this, m_menuExit->GetId());
 	m_help->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( ConverterFrame::OnAbout ), this, m_menuabout->GetId());
+	m_sourceNumber->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( ConverterFrame::OnSourceNumberTextUpdate ), NULL, this );
+	m_sourceNumber->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( ConverterFrame::OnSourceNumber ), NULL, this );
 	m_sourceRadix->Connect( wxEVT_SLIDER, wxCommandEventHandler( ConverterFrame::OnSliderSourceRadix ), NULL, this );
+	m_outputPrecision->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( ConverterFrame::OnPrecisionChoice ), NULL, this );
+	m_outputRadix->Connect( wxEVT_SLIDER, wxCommandEventHandler( ConverterFrame::OnSliderOutputRadix ), NULL, this );
 	m_button0->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( ConverterFrame::OnNumberClick ), NULL, this );
 	m_button1->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( ConverterFrame::OnNumberClick ), NULL, this );
 	m_button2->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( ConverterFrame::OnNumberClick ), NULL, this );
@@ -220,12 +241,20 @@ ConverterFrame::ConverterFrame( wxWindow* parent, wxWindowID id, const wxString&
 	m_buttonD->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( ConverterFrame::OnNumberClick ), NULL, this );
 	m_buttonE->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( ConverterFrame::OnNumberClick ), NULL, this );
 	m_buttonF->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( ConverterFrame::OnNumberClick ), NULL, this );
+	m_buttonDot->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( ConverterFrame::OnDot ), NULL, this );
+	m_buttonBS->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( ConverterFrame::OnBackspace ), NULL, this );
+	m_buttonCE->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( ConverterFrame::OnClear ), NULL, this );
+	m_buttonSign->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( ConverterFrame::OnSign ), NULL, this );
 }
 
 ConverterFrame::~ConverterFrame()
 {
 	// Disconnect Events
+	m_sourceNumber->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( ConverterFrame::OnSourceNumberTextUpdate ), NULL, this );
+	m_sourceNumber->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( ConverterFrame::OnSourceNumber ), NULL, this );
 	m_sourceRadix->Disconnect( wxEVT_SLIDER, wxCommandEventHandler( ConverterFrame::OnSliderSourceRadix ), NULL, this );
+	m_outputPrecision->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( ConverterFrame::OnPrecisionChoice ), NULL, this );
+	m_outputRadix->Disconnect( wxEVT_SLIDER, wxCommandEventHandler( ConverterFrame::OnSliderOutputRadix ), NULL, this );
 	m_button0->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( ConverterFrame::OnNumberClick ), NULL, this );
 	m_button1->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( ConverterFrame::OnNumberClick ), NULL, this );
 	m_button2->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( ConverterFrame::OnNumberClick ), NULL, this );
@@ -242,6 +271,10 @@ ConverterFrame::~ConverterFrame()
 	m_buttonD->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( ConverterFrame::OnNumberClick ), NULL, this );
 	m_buttonE->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( ConverterFrame::OnNumberClick ), NULL, this );
 	m_buttonF->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( ConverterFrame::OnNumberClick ), NULL, this );
+	m_buttonDot->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( ConverterFrame::OnDot ), NULL, this );
+	m_buttonBS->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( ConverterFrame::OnBackspace ), NULL, this );
+	m_buttonCE->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( ConverterFrame::OnClear ), NULL, this );
+	m_buttonSign->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( ConverterFrame::OnSign ), NULL, this );
 
 }
 

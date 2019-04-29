@@ -8,6 +8,7 @@
 namespace NEditor {
 
     using NConst::DOT;
+    using NConst::MINUS;
     using NConst::RADIX_MAX;
     using NConst::ZERO;
     using namespace std;
@@ -27,16 +28,20 @@ namespace NEditor {
             return str == "0" || str == "-0";
         }
 
+        bool IsEmpty() const {
+            return str.empty() || str == "-";
+        }
+
         string AddSign() {
-            if (str.size() > 0 and str[0] == '-') {
+            if (str.size() > 0 and str[0] == MINUS) {
                 str = str.substr(1);
             } else {
-                str = "-" + str;
+                str = MINUS + str;
             }
             return str;
         }
 
-        string AddSymbol(char symbol, int base = 16) {
+        string AddDigit(char symbol, int base = 16) {
             if (!NConst::IsValidChar(symbol, base)) {
                 throw invalid_digit("Invalid p number " + to_string(symbol));
             }
@@ -48,10 +53,15 @@ namespace NEditor {
             return str;
         }
 
+        bool HasDot() {
+            return dotSeen;
+        }
+
         string AddDot() {
-            if (str.find(DOT) != string::npos) {
+            if (dotSeen) {
                 throw invalid_digit("Dot alredy present in: '" + str + "'");
             }
+            dotSeen = true;
             str += DOT;
             return str;
         }
@@ -62,15 +72,43 @@ namespace NEditor {
         }
 
         string Backspace() {
-            if (str.size() > 0) {
-                str.resize(str.size() - 1);
+            size_t size = str.size();
+            if (size > 0) {
+                if (str[size - 1] == DOT) {
+                    dotSeen = false;
+                }
+                str.resize(size - 1);
             }
             return str;
         }
 
         string Clear() {
             str.clear();
-            str.append(ZERO);
+            str += ZERO;
+            dotSeen = false;
+            return str;
+        }
+
+        string Set(std::string in, int base) {
+            TEditor new_;
+            size_t inSize = in.size();
+            size_t i = 0;
+            if (inSize > 0 && in[i] == MINUS) {
+                i++;
+                new_.AddSign();
+            }
+            for (; i < in.size(); i++) {
+                char c = in[i];
+                switch (c) {
+                    case DOT:
+                        new_.AddDot();
+                        break;
+                    default:
+                        new_.AddDigit(c, base);
+                }
+            }
+            dotSeen = new_.dotSeen;
+            str = new_.Get();
             return str;
         }
 
@@ -79,6 +117,7 @@ namespace NEditor {
         }
 
     private:
+        bool dotSeen = false;
         string str = "";
     };
 }; // namespace NEditor
@@ -102,7 +141,7 @@ void test_editor_operations() {
         TEST_CHECK(e.Get() == "-0");
         e.Clear();
         TEST_CHECK(e.Get() == "0");
-        e.AddSymbol('A');
+        e.AddDigit('A');
         TEST_CHECK(e.Get() == "A");
         e.Clear();
         TEST_CHECK(e.Get() == "0");
@@ -128,30 +167,38 @@ void test_editor_operations() {
         TEST_CHECK(!e.IsZero());
         e.AddZero();
         TEST_CHECK(e.IsZero());
-        e.AddSymbol('A');
+        e.AddDigit('A');
         TEST_CHECK(!e.IsZero());
         TEST_CHECK(e.Get() == "-A");
     }
 
-    TEST_CASE("AddSymbol / AddDot");
+    TEST_CASE("AddDigit / AddDot");
     {
         TEditor e;
-        TEST_EXCEPTION(e.AddSymbol('A', 10), NEditor::invalid_digit);
-        e.AddSymbol('A');
+        TEST_EXCEPTION(e.AddDigit('A', 10), NEditor::invalid_digit);
+        e.AddDigit('A');
         TEST_CHECK(e.Get() == "A");
         e.AddDot();
         TEST_CHECK(e.Get() == "A.");
         TEST_EXCEPTION(e.AddDot(), NEditor::invalid_digit);
         TEST_CHECK(e.Get() == "A.");
-        e.AddSymbol('E');
+        e.AddDigit('E');
         TEST_CHECK(e.Get() == "A.E");
+    }
+    TEST_CASE("AddSign;AddDot");
+    {
+        TEditor e;
+        e.AddSign();
+        TEST_CHECK(e.Get() == "-");
+        e.AddDot();
+        TEST_CHECK(e.Get() == "-.");
     }
     TEST_CASE("Backspace");
     {
         TEditor e;
-        e.AddSymbol('A');
+        e.AddDigit('A');
         e.AddDot();
-        e.AddSymbol('E');
+        e.AddDigit('E');
         TEST_CHECK(e.Get() == "A.E");
         TEST_CHECK(e.Backspace() == "A.");
         TEST_CHECK(e.Get() == "A.");

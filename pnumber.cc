@@ -45,7 +45,7 @@ namespace NPNumber {
 
     class TPNumber {
     public:
-        TPNumber(double n = 0, int b = 10, int c = 0) {
+        TPNumber(long double n = 0, int b = 10, int c = 0) {
             number = n;
             radix = ValidateRadix(b);
             precision = ValidatePrecision(c);
@@ -121,7 +121,7 @@ namespace NPNumber {
             return {number * number, radix, precision};
         }
 
-        double GetNumber() const {
+        long double GetNumber() const {
             return number;
         }
         int GetRadix() const {
@@ -138,24 +138,23 @@ namespace NPNumber {
         }
 
         std::string ToString() const {
-            double outNumber = number;
+            long double outNumber = number;
             if (radix == 10 && !_doCarry) {
                 outNumber = Truncate(number, precision);
             }
             std::stringstream sresult;
             sresult << std::fixed << std::setprecision(precision) << outNumber;
             std::string result = sresult.str();
-            if (radix == 10 ||
-                std::string(result).find("inf") != std::string::npos ||
+            if (std::string(result).find("inf") != std::string::npos ||
                 std::string(result).find("nan") != std::string::npos) {
                 return result;
             }
             result.clear();
 
-            double positive_number = std::abs(outNumber);
+            long double positive_number = std::abs(outNumber);
 
-            int tmpN = (int)positive_number;
-            double fdouble = (positive_number - (double)tmpN);
+            long tmpN = (long)positive_number;
+            long double fdouble = (positive_number - (long double)tmpN);
             std::string fs = fractionToString(fdouble);
             if (_doCarry) {
                 // probably valid only for positive numbers, skip by default
@@ -185,6 +184,12 @@ namespace NPNumber {
             return sresult.str();
         }
 
+        void SetNumber(long double n) {
+            number = n;
+        }
+        void SetNumberAsStr(const std::string n) {
+            number = ParseNumber(n, radix);
+        }
         void SetRadix(int r) {
             radix = ValidateRadix(r);
         }
@@ -201,14 +206,14 @@ namespace NPNumber {
             _doCarry = v;
         }
 
-        static double ParseNumber(const std::string& ns, int base) {
+        static long double ParseNumber(const std::string& ns, int base) {
             char* nend;
-            double n = strtol(ns.c_str(), &nend, base);
+            long double n = strtoll(ns.c_str(), &nend, base);
             if (*nend == '.' && *(++nend) != '\0') {
                 char* dot = nend;
-                double fractional = strtol(nend, &nend, base);
+                long double fractional = strtoll(nend, &nend, base);
                 if (*nend == '\0') {
-                    fractional /= (double)pow(base, nend - dot);
+                    fractional /= (long double)pow((long)base, nend - dot);
                     if (n < 0) { // negative number, so fraction too
                         fractional = -fractional;
                     }
@@ -259,7 +264,7 @@ namespace NPNumber {
             return p;
         }
 
-        static double Truncate(double x, int n) {
+        static long double Truncate(long double x, long n) {
             if (x > 0) {
                 x = floor(x * pow(10, n)) / pow(10, n);
             } else if (x < 0) {
@@ -269,9 +274,9 @@ namespace NPNumber {
         }
 
     private:
-        std::string fractionToString(double fraction) const {
+        std::string fractionToString(long double fraction) const {
             char fstring[DOUBLE_PRECISION + 2]; // +2 is leading 0.
-            sprintf(fstring, "%.15f", fraction);
+            sprintf(fstring, "%.15Lf", fraction);
             std::string fs(fstring);
             std::vector<int> fracVec;
             transform(fs.begin() + 2 /*skip 0.*/, fs.end(),
@@ -318,7 +323,7 @@ namespace NPNumber {
         }
 
         bool _doCarry = false;
-        double number;
+        long double number;
         int radix;
         int precision;
     };
@@ -479,7 +484,7 @@ void test_pnumber_to_string() {
     {
         TEST_CASE("TPNumber from string");
         TPNumber p = TPNumber("-A1.E", "16", "3");
-        double expect = -161.875;
+        long double expect = -161.875;
         TEST_CHECK_(p.GetNumber() == expect, "%f == %f", p.GetNumber(), expect);
     }
     {
@@ -513,7 +518,7 @@ void test_pnumber_to_string() {
     TEST_CASE("With fraction");
     {
         struct Case {
-            double n;
+            long double n;
             int r;
             int b;
             string expect;
@@ -555,7 +560,7 @@ void test_pnumber_to_string() {
         }
         TEST_CASE("Negative")
         for (auto c : cases) {
-            double n = -c.n;
+            long double n = -c.n;
             string expect = "-" + c.expect;
             TPNumber p = TPNumber(n, c.r, c.b);
             if (not TEST_CHECK(p.ToString() == expect)) {
@@ -568,9 +573,9 @@ void test_pnumber_to_string() {
     }
     TEST_CASE("Infinity");
     {
-        TPNumber n = TPNumber(numeric_limits<double>::infinity(), 2, 2);
+        TPNumber n = TPNumber(numeric_limits<long double>::infinity(), 2, 2);
         TEST_CHECK(n.ToString() == "inf"); // inf^2
-        n = TPNumber(-numeric_limits<double>::infinity(), 2, 2);
+        n = TPNumber(-numeric_limits<long double>::infinity(), 2, 2);
         TEST_CHECK(n.ToString() == "-inf"); // inf^2
     }
 }
@@ -645,7 +650,7 @@ void test_pnumber_operations() {
 void test_pnumber_fraction_carry() {
     using namespace NPNumber;
     struct Case {
-        double n;
+        long double n;
         int r;
         int b;
         string expect;
@@ -688,7 +693,7 @@ void test_pnumber_fraction_carry() {
     }
     TEST_CASE("Negative with carry")
     for (auto c : cases) {
-        double n = -c.n;
+        long double n = -c.n;
         string expect = "-" + c.expect;
         TPNumber p = TPNumber(n, c.r, c.b);
         p.SetDoCarry();
