@@ -17,7 +17,11 @@ namespace NCtrl {
         explicit TCtrl() {
         }
 
-        void DoCmd(int cmd) {
+        void SetSourceRadix(int radix) {
+            radixIn = radix;
+        }
+        int GetSourceRadix() {
+            return radixIn;
         }
 
     private:

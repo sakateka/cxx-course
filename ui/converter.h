@@ -41,14 +41,14 @@ class ConverterFrame : public wxFrame
 	private:
 
 	protected:
-		wxMenuBar* m_menubar1;
-		wxMenu* main;
-		wxMenu* Help;
+		wxMenuBar* m_mainMenuBar;
+		wxMenu* m_main;
+		wxMenu* m_help;
 		wxTextCtrl* m_textCtrl1;
 		wxStaticText* m_staticText1;
 		wxStaticText* m_staticText5;
 		wxStaticText* m_staticText6;
-		wxSlider* m_slider1;
+		wxSlider* m_sourceRadix;
 		wxTextCtrl* m_textCtrl11;
 		wxStaticText* m_staticText11;
 		wxStaticText* m_staticText7;
@@ -78,6 +78,14 @@ class ConverterFrame : public wxFrame
 		wxButton* m_buttonCE;
 		wxButton* m_buttonDo;
 		wxStatusBar* m_statusBar1;
+
+		// Virtual event handlers, overide them in your derived class
+		virtual void OnHistory( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnExit( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnAbout( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnSliderSourceRadix( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnNumberClick( wxCommandEvent& event ) { event.Skip(); }
+
 
 	public:
 
