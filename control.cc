@@ -19,9 +19,15 @@ namespace NCtrl {
         void SetOutputPrecision(int p) {
             number.SetPrecision(p);
         }
+        int GetOutputPrecision() {
+            return number.GetPrecision();
+        }
 
         void SetOutputRadix(int radix) {
             number.SetRadix(radix);
+        }
+        int GetOutputRadix() {
+            return number.GetRadix();
         }
 
         void SetSourceRadix(int radix) {
@@ -117,6 +123,84 @@ namespace NCtrl {
 }; // namespace NCtrl
 
 #ifdef RUN_TESTS
-// tests
+#include "acutest.h"
+void test_control_operations() {
+    TEST_CASE("SetOutputPrecision");
+    {
+        NCtrl::TCtrl c;
+        int expect = 13;
+        TEST_CHECK(c.GetOutputPrecision() != expect); // default 3 or 0
+        c.SetOutputPrecision(expect);
+        TEST_CHECK(c.GetOutputPrecision() == expect);
+    }
+    TEST_CASE("SetOutputRadix");
+    {
+        NCtrl::TCtrl c;
+        int expect = 14;
+        TEST_CHECK(c.GetOutputRadix() != expect); // default 10
+        c.SetOutputRadix(expect);
+        TEST_CHECK(c.GetOutputRadix() == expect);
+    }
+    TEST_CASE("Set Source Radix");
+    {
+        NCtrl::TCtrl c;
+        int expect = 2;
+        TEST_CHECK(c.GetSourceRadix() != expect); // default 10
+        c.SetSourceRadix(expect);
+        TEST_CHECK(c.GetSourceRadix() == expect);
+    }
+    TEST_CASE("GetSourceNumberAsStr");
+    {
+        NCtrl::TCtrl c;
+        std::string expect = "";
+        TEST_CHECK(c.GetSourceNumberAsStr() == expect);
+        expect = "F.2";
+        c.SetSourceRadix(16);
+        c.AddDigit('F');
+        c.AddDot();
+        c.AddDigit('2');
+        TEST_CHECK(c.GetSourceNumberAsStr() == expect);
+        TEST_CASE("Clear");
+        c.Clear();
+        TEST_CHECK(c.GetSourceNumberAsStr() == "0");
+        TEST_CASE("Backspace");
+        c.Backspace();
+        TEST_CHECK(c.GetSourceNumberAsStr() == "");
+        c.AddDigit('F');
+        c.AddDot();
+        c.AddDigit('2');
+        TEST_CHECK(c.GetSourceNumberAsStr() == expect);
+        c.Backspace();
+        c.Backspace();
+        TEST_CHECK(c.GetSourceNumberAsStr() == "F");
+    }
+    TEST_CASE("AddDigit / AddDot");
+    {
+        NCtrl::TCtrl c;
+        c.SetSourceRadix(NConst::RADIX_MIN);
+        for (size_t i = NConst::RADIX_MIN; i < NConst::RADIX_MAX; i++) {
+            char outside_radix = NConst::ALPHABET[i];
+            TEST_EXCEPTION(c.AddDigit(outside_radix), NEditor::invalid_digit);
+        }
+        std::string expect = "."; // dot to preserve leading zero
+        c.AddDot();
+        c.SetSourceRadix(NConst::RADIX_MAX);
+        for (size_t i = 0; i < NConst::RADIX_MAX; i++) {
+            char valid_digit = NConst::ALPHABET[i];
+            expect += valid_digit;
+            c.AddDigit(valid_digit);
+            TEST_CHECK(c.GetSourceNumberAsStr() == expect && expect.size() == i + 2);
+        }
+        TEST_EXCEPTION(c.AddDot(), NEditor::invalid_digit);
+    }
+    /*
+        std::string ReSetNumber(std::string n);
+        std::string SetToSource();
+        std::string Convert();
+        void AddToHistory();
+        NHistory::Record SetFromHistory(int idx);
+        std::vector<std::string> GetHistory();
+    */
+}
 #endif // #ifdef RUN_TESTS
 #endif //#ifndef TCTRL_CC

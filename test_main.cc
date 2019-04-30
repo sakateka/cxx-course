@@ -11,6 +11,7 @@
 #include "converter.cc"
 #include "editor.cc"
 #include "history.cc"
+#include "control.cc"
 
 // acutest provide main func
 TEST_LIST = {
@@ -41,4 +42,6 @@ TEST_LIST = {
     {"editor_operations", test_editor_operations},
     // History
     {"history", test_history},
+    // Control
+    {"control", test_control_operations},
     {NULL, NULL}};
