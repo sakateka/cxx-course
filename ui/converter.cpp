@@ -72,7 +72,7 @@ ConverterFrame::ConverterFrame( wxWindow* parent, wxWindowID id, const wxString&
 	gSizer10->Add( m_staticText5, 0, wxALL, 5 );
 
 	m_buttonToHistory = new wxButton( this, wxID_ANY, wxT("ToHistory"), wxDefaultPosition, wxDefaultSize, 0 );
-	gSizer10->Add( m_buttonToHistory, 1, wxALIGN_RIGHT, 0 );
+	gSizer10->Add( m_buttonToHistory, 1, wxALIGN_RIGHT, 5 );
 
 
 	bSizer1->Add( gSizer10, 0, wxEXPAND, 2 );
@@ -92,7 +92,7 @@ ConverterFrame::ConverterFrame( wxWindow* parent, wxWindowID id, const wxString&
 	wxGridSizer* gSizer11;
 	gSizer11 = new wxGridSizer( 2, 3, 0, 10 );
 
-	m_staticText11 = new wxStaticText( this, wxID_ANY, wxEmptyString, wxPoint( 2,-1 ), wxDefaultSize, wxALIGN_RIGHT );
+	m_staticText11 = new wxStaticText( this, wxID_ANY, wxEmptyString, wxPoint( 2,-1 ), wxDefaultSize, 0 );
 	m_staticText11->Wrap( -1 );
 	gSizer11->Add( m_staticText11, 0, wxALL|wxEXPAND|wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT, 0 );
 
@@ -109,7 +109,7 @@ ConverterFrame::ConverterFrame( wxWindow* parent, wxWindowID id, const wxString&
 
 	gSizer11->Add( m_outputPrecision, 1, wxALIGN_RIGHT|wxALL, 0 );
 
-	m_staticText4 = new wxStaticText( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT );
+	m_staticText4 = new wxStaticText( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
 	m_staticText4->Wrap( -1 );
 	gSizer11->Add( m_staticText4, 1, wxALIGN_CENTER_VERTICAL|wxALIGN_RIGHT|wxALL|wxEXPAND, 0 );
 
@@ -124,7 +124,7 @@ ConverterFrame::ConverterFrame( wxWindow* parent, wxWindowID id, const wxString&
 
 	bSizer1->Add( gSizer11, 0, wxEXPAND, 0 );
 
-	m_outputRadix = new wxSlider( this, wxID_ANY, 16, 2, 16, wxDefaultPosition, wxDefaultSize, wxSL_AUTOTICKS|wxSL_HORIZONTAL|wxSL_LABELS|wxSL_VALUE_LABEL );
+	m_outputRadix = new wxSlider( this, wxID_ANY, 16, 2, 16, wxDefaultPosition, wxDefaultSize, wxSL_LABELS|wxSL_VALUE_LABEL );
 	m_outputRadix->SetToolTip( wxT("Set Output Radix") );
 	m_outputRadix->SetHelpText( wxT("Set Output Radix") );
 
@@ -206,7 +206,7 @@ ConverterFrame::ConverterFrame( wxWindow* parent, wxWindowID id, const wxString&
 	gSizer8->Add( m_buttonSign, 0, wxALL, 5 );
 
 
-	bSizer1->Add( gSizer8, 0, wxALIGN_CENTER|wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL|wxALL|wxEXPAND, 1 );
+	bSizer1->Add( gSizer8, 0, wxALL|wxEXPAND, 1 );
 
 
 	this->SetSizer( bSizer1 );

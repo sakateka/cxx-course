@@ -43,8 +43,8 @@ public:
 
             m_sourceRadix->SetValue(sel.radix1);
             m_outputRadix->SetValue(sel.radix2);
-            m_sourceNumber->ChangeValue(sel.number1);
-            m_outputNumber->ChangeValue(sel.number2);
+            m_sourceNumber->ChangeValue(wxString(sel.number1));
+            m_outputNumber->ChangeValue(wxString(sel.number2));
             UpdateControls(sel.radix1);
             OnSourceNumber(event);
         }
@@ -58,7 +58,7 @@ public:
     void OnSourceNumber(wxCommandEvent& event) {
         std::string result = Control.Convert();
         wxLogDebug("Do conversion for: %s -> %s", m_sourceNumber->GetValue(), result);
-        m_outputNumber->ChangeValue(result);
+        m_outputNumber->ChangeValue(wxString(result));
     }
 
     int SetPrecision() {
@@ -75,14 +75,14 @@ public:
 
     void OnSign(wxCommandEvent& event) {
         Control.AddSign();
-        m_sourceNumber->ChangeValue(Control.GetSourceNumberAsStr());
+        m_sourceNumber->ChangeValue(wxString(Control.GetSourceNumberAsStr()));
         OnSourceNumber(event);
     }
 
     void OnDot(wxCommandEvent& event) {
         try {
             Control.AddDot();
-            m_sourceNumber->ChangeValue(Control.GetSourceNumberAsStr());
+            m_sourceNumber->ChangeValue(wxString(Control.GetSourceNumberAsStr()));
             SetPrecision();
         } catch (NCtrl::invalid_digit& e) {
             wxLogDebug("Failed to add dot: %s", e.what());
@@ -92,15 +92,15 @@ public:
     void OnBackspace(wxCommandEvent& event) {
         wxLogDebug("Click on backspace button");
         Control.Backspace();
-        m_sourceNumber->ChangeValue(Control.GetSourceNumberAsStr());
+        m_sourceNumber->ChangeValue(wxString(Control.GetSourceNumberAsStr()));
         OnSourceNumber(event);
     }
 
     void OnClear(wxCommandEvent& WXUNUSED(event)) {
         wxLogDebug("Click on clear button");
         Control.Clear();
-        m_sourceNumber->ChangeValue("");
-        m_outputNumber->ChangeValue("");
+        m_sourceNumber->ChangeValue(wxT(""));
+        m_outputNumber->ChangeValue(wxT(""));
     }
 
     void OnSliderOutputRadix(wxCommandEvent& event) {
@@ -115,7 +115,7 @@ public:
         try {
             Control.SetSourceRadix(sourceRadix);
             // convert source number to valid and reset ui text
-            m_sourceNumber->ChangeValue(Control.SetToSource());
+            m_sourceNumber->ChangeValue(wxString(Control.SetToSource()));
         } catch (std::exception& e) {
             wxLogDebug("Failed to convert number: %s", e.what());
         }
@@ -135,7 +135,7 @@ public:
     void OnNumberClick(wxCommandEvent& event) {
         int id = event.GetId();
         wxButton* nb = (wxButton*)wxWindow::FindWindowById(id);
-        char n = nb->GetLabel().GetChar(0);
+        char n = nb->GetLabel().ToStdString()[0];
         wxLogDebug("Click on %c", n);
 
         try {
@@ -145,7 +145,7 @@ public:
         } catch (std::exception& e) {
             wxLogDebug("Unexpected exception from AddDigit for '%c': %s", n, e.what());
         }
-        m_sourceNumber->ChangeValue(Control.GetSourceNumberAsStr());
+        m_sourceNumber->ChangeValue(wxString(Control.GetSourceNumberAsStr()));
         OnSourceNumber(event);
     }
 
@@ -158,9 +158,9 @@ public:
     }
 
     void OnSourceNumberTextUpdate(wxCommandEvent& event) {
-        wxString inStr = m_sourceNumber->GetValue();
+        std::string inStr = m_sourceNumber->GetValue().ToStdString();
         wxLogDebug("Process string: '%s'", inStr);
-        std::string tmp = inStr.ToStdString();
+        std::string tmp = inStr;
         bool ok = false;
         try {
             // try reset PNumber
@@ -172,8 +172,8 @@ public:
             wxLogDebug("Unknown exception while parse '%s': %s", inStr, e.what());
         }
         inStr = Control.GetSourceNumberAsStr();
-        m_sourceNumber->ChangeValue(inStr);
-        m_sourceNumber->SetInsertionPoint(inStr.Length());
+        m_sourceNumber->ChangeValue(wxString(inStr));
+        m_sourceNumber->SetInsertionPoint(inStr.size());
         if (ok) {
             wxLogDebug("Trigger Convert for: %s", inStr);
             OnSourceNumber(event);
