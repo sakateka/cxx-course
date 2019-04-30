@@ -79,7 +79,6 @@ namespace NCtrl {
             n.SetDoCarry();
             n.SetRadix(radixIn);
             std::string s = n.ToString();
-            std::cout << "result s=" << s << std::endl;
             size_t end = s.size();
             size_t dot = s.find(NConst::DOT);
             if (dot != std::string::npos) {
@@ -125,6 +124,7 @@ namespace NCtrl {
 #ifdef RUN_TESTS
 #include "acutest.h"
 void test_control_operations() {
+    using namespace std;
     TEST_CASE("SetOutputPrecision");
     {
         NCtrl::TCtrl c;
@@ -152,7 +152,7 @@ void test_control_operations() {
     TEST_CASE("GetSourceNumberAsStr");
     {
         NCtrl::TCtrl c;
-        std::string expect = "";
+        string expect = "";
         TEST_CHECK(c.GetSourceNumberAsStr() == expect);
         expect = "F.2";
         c.SetSourceRadix(16);
@@ -182,7 +182,7 @@ void test_control_operations() {
             char outside_radix = NConst::ALPHABET[i];
             TEST_EXCEPTION(c.AddDigit(outside_radix), NEditor::invalid_digit);
         }
-        std::string expect = "."; // dot to preserve leading zero
+        string expect = "."; // dot to preserve leading zero
         c.AddDot();
         c.SetSourceRadix(NConst::RADIX_MAX);
         for (size_t i = 0; i < NConst::RADIX_MAX; i++) {
@@ -194,13 +194,84 @@ void test_control_operations() {
         TEST_EXCEPTION(c.AddDot(), NEditor::invalid_digit);
     }
     /*
-        std::string ReSetNumber(std::string n);
-        std::string SetToSource();
-        std::string Convert();
-        void AddToHistory();
-        NHistory::Record SetFromHistory(int idx);
-        std::vector<std::string> GetHistory();
-    */
+        string ReSetNumber(string n) {
+            int radixOut = number.GetRadix();
+            n = editor.Set(n, radixIn);
+            number.SetRadix(radixIn);
+            number.SetNumberAsStr(n);
+            number.SetRadix(radixOut);
+            return n;
+        }
+        */
+    TEST_CASE("ReSetNumber");
+    {
+        NCtrl::TCtrl c;
+        c.SetSourceRadix(10);
+        c.SetOutputRadix(10);
+        c.SetOutputPrecision(3);
+
+        string g = c.ReSetNumber("-10.981");
+        string e = c.Convert();
+        c.SetSourceRadix(16);
+
+        c.ReSetNumber("-DEF.FED");
+        c.SetOutputPrecision(4);
+        g = c.Convert();
+        e = "-3567.9953";
+        TEST_CHECK_(g == e, "%s == %s", g.c_str(), e.c_str());
+    }
+    TEST_CASE("SetToSource");
+    {
+        NCtrl::TCtrl c;
+        c.SetSourceRadix(10);
+        c.SetOutputRadix(16);
+        c.SetOutputPrecision(3);
+        string in = "15.9375";
+        c.ReSetNumber(in);
+        string g = c.Convert();
+        string e = "F.F00";
+        string s = c.GetSourceNumberAsStr();
+        TEST_CHECK_(g == e, "%s == %s", g.c_str(), e.c_str());
+        TEST_CHECK_(s == in, "%s == %s", s.c_str(), in.c_str());
+
+        c.SetSourceRadix(12);
+        g = c.SetToSource();
+        e = "13.B3";
+        TEST_CHECK_(g == e, "%s == %s", g.c_str(), e.c_str());
+        g = c.Convert();
+        e = "F.F00";
+        TEST_CHECK_(g == e, "%s == %s", g.c_str(), e.c_str());
+        c.SetSourceRadix(12);
+        TEST_EXCEPTION(c.ReSetNumber("F.F"), NEditor::invalid_digit);
+    }
+    TEST_CASE("SetToSource && History ");
+    {
+        NCtrl::TCtrl c;
+        c.SetSourceRadix(10);
+        c.SetOutputRadix(16);
+        c.SetOutputPrecision(1);
+        string in = "15.9375";
+        c.ReSetNumber(in);
+        c.AddToHistory();
+
+        TEST_CHECK_(c.Convert() == "F.F", "%s == F.F", c.Convert().c_str());
+        c.SetOutputPrecision(3);
+        c.SetOutputRadix(15);
+        c.AddToHistory();
+        string g = c.Convert();
+        string e = "10.E0E";
+        TEST_CHECK_(g == e, "%s == %s", g.c_str(), e.c_str());
+
+        TEST_CHECK(c.GetHistory().size() == 2);
+        NHistory::Record r1 = c.SetFromHistory(0);
+        NHistory::Record r2 = c.SetFromHistory(1);
+
+        // r 1
+        e = "{{15.9375, 10} => {F.F, 16}}";
+        TEST_CHECK_(r1.ToString() == e, "%s == %s", r1.ToString().c_str(), e.c_str());
+        e = "{{15.9375, 10} => {10.E0E, 15}}";
+        TEST_CHECK_(r2.ToString() == e, "%s == %s", r2.ToString().c_str(), e.c_str());
+    }
 }
 #endif // #ifdef RUN_TESTS
 #endif //#ifndef TCTRL_CC
