@@ -33,7 +33,7 @@ namespace NEditor {
         }
 
         string AddSign() {
-            if (str.size() > 0 and str[0] == MINUS) {
+            if (!str.empty() && str[0] == MINUS) {
                 str = str.substr(1);
             } else {
                 str = MINUS + str;

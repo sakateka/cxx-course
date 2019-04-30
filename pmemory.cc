@@ -116,7 +116,7 @@ void test_pmemory_operations() {
         TEST_CHECK(m.GetState() == true);
         m.Clear(3, 3);
         TEST_CHECK(m.GetState() == false);
-        TEST_CHECK(m.Get().GetNumber() == 0 and m.Get().GetRadix() == 3 and
+        TEST_CHECK(m.Get().GetNumber() == 0 && m.Get().GetRadix() == 3 and
                    m.Get().GetPrecision() == 3);
     }
 

@@ -598,12 +598,12 @@ void test_pnumber_operations() {
     {
         TPNumber a = TPNumber("F", "16", "3");
         TPNumber b = TPNumber("15", "10", "3");
-        TEST_CHECK(a == b and a.GetNumber() == b.GetNumber());
+        TEST_CHECK(a == b && a.GetNumber() == b.GetNumber());
 
         b.SetRadix(16);
-        TEST_CHECK(a == b and a.GetNumber() == b.GetNumber());
+        TEST_CHECK(a == b && a.GetNumber() == b.GetNumber());
         a = TPNumber(1, 10, 3);
-        TEST_CHECK(a != b and a.GetNumber() != b.GetNumber());
+        TEST_CHECK(a != b && a.GetNumber() != b.GetNumber());
     }
 
     {
