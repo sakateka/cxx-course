@@ -33,7 +33,7 @@ ConverterFrame::ConverterFrame( wxWindow* parent, wxWindowID id, const wxString&
 	m_mainMenuBar = new wxMenuBar( 0 );
 	m_main = new wxMenu();
 	wxMenuItem* m_menuHistory;
-	m_menuHistory = new wxMenuItem( m_main, wxID_History, wxString( wxT("History") ) , wxEmptyString, wxITEM_NORMAL );
+	m_menuHistory = new wxMenuItem( m_main, wxID_History, wxString( wxT("History") ) + wxT('\t') + wxT("Ctrl+H"), wxT("Show History"), wxITEM_NORMAL );
 	m_main->Append( m_menuHistory );
 
 	wxMenuItem* m_menuExit;
@@ -71,9 +71,8 @@ ConverterFrame::ConverterFrame( wxWindow* parent, wxWindowID id, const wxString&
 	m_staticText5->Wrap( -1 );
 	gSizer10->Add( m_staticText5, 0, wxALL, 5 );
 
-	m_staticText6 = new wxStaticText( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
-	m_staticText6->Wrap( -1 );
-	gSizer10->Add( m_staticText6, 0, wxALL, 5 );
+	m_buttonToHistory = new wxButton( this, wxID_ANY, wxT("ToHistory"), wxDefaultPosition, wxDefaultSize, 0 );
+	gSizer10->Add( m_buttonToHistory, 1, wxALIGN_RIGHT, 0 );
 
 
 	bSizer1->Add( gSizer10, 0, wxEXPAND, 2 );
@@ -222,6 +221,7 @@ ConverterFrame::ConverterFrame( wxWindow* parent, wxWindowID id, const wxString&
 	m_help->Bind(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler( ConverterFrame::OnAbout ), this, m_menuabout->GetId());
 	m_sourceNumber->Connect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( ConverterFrame::OnSourceNumberTextUpdate ), NULL, this );
 	m_sourceNumber->Connect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( ConverterFrame::OnSourceNumber ), NULL, this );
+	m_buttonToHistory->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( ConverterFrame::OnAddToHistory ), NULL, this );
 	m_sourceRadix->Connect( wxEVT_SLIDER, wxCommandEventHandler( ConverterFrame::OnSliderSourceRadix ), NULL, this );
 	m_outputPrecision->Connect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( ConverterFrame::OnPrecisionChoice ), NULL, this );
 	m_outputRadix->Connect( wxEVT_SLIDER, wxCommandEventHandler( ConverterFrame::OnSliderOutputRadix ), NULL, this );
@@ -252,6 +252,7 @@ ConverterFrame::~ConverterFrame()
 	// Disconnect Events
 	m_sourceNumber->Disconnect( wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler( ConverterFrame::OnSourceNumberTextUpdate ), NULL, this );
 	m_sourceNumber->Disconnect( wxEVT_COMMAND_TEXT_ENTER, wxCommandEventHandler( ConverterFrame::OnSourceNumber ), NULL, this );
+	m_buttonToHistory->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( ConverterFrame::OnAddToHistory ), NULL, this );
 	m_sourceRadix->Disconnect( wxEVT_SLIDER, wxCommandEventHandler( ConverterFrame::OnSliderSourceRadix ), NULL, this );
 	m_outputPrecision->Disconnect( wxEVT_COMMAND_CHOICE_SELECTED, wxCommandEventHandler( ConverterFrame::OnPrecisionChoice ), NULL, this );
 	m_outputRadix->Disconnect( wxEVT_SLIDER, wxCommandEventHandler( ConverterFrame::OnSliderOutputRadix ), NULL, this );
@@ -276,26 +277,4 @@ ConverterFrame::~ConverterFrame()
 	m_buttonCE->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( ConverterFrame::OnClear ), NULL, this );
 	m_buttonSign->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( ConverterFrame::OnSign ), NULL, this );
 
-}
-
-HistoryFrame::HistoryFrame( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxDialog( parent, id, title, pos, size, style )
-{
-	this->SetSizeHints( wxSize( 300,200 ), wxSize( 300,600 ) );
-
-	wxBoxSizer* bSizer3;
-	bSizer3 = new wxBoxSizer( wxVERTICAL );
-
-	m_listBox2 = new wxListBox( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, 0, NULL, 0 );
-	bSizer3->Add( m_listBox2, 1, wxALL|wxEXPAND, 5 );
-
-
-	this->SetSizer( bSizer3 );
-	this->Layout();
-	bSizer3->Fit( this );
-
-	this->Centre( wxBOTH );
-}
-
-HistoryFrame::~HistoryFrame()
-{
 }

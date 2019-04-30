@@ -3,6 +3,7 @@
 
 #include <string>
 #include <list>
+#include <vector>
 #include <stdexcept>
 
 namespace NHistory {
@@ -14,7 +15,7 @@ namespace NHistory {
         const std::string number2;
 
         std::string ToString() const {
-            return "{{" + number1 + ", " + std::to_string(radix1) + "}," +
+            return "{{" + number1 + ", " + std::to_string(radix1) + "} =>" +
                    " {" + number2 + ", " + std::to_string(radix2) + "}}";
         }
         bool operator==(Record& rhs) const {
@@ -45,6 +46,14 @@ namespace NHistory {
 
         void Clear() {
             _history.clear();
+        }
+
+        std::vector<std::string> Get() {
+            std::vector<std::string> l;
+            for (auto& r : _history) {
+                l.push_back(r.ToString());
+            }
+            return l;
         }
 
         int Count() {
@@ -87,8 +96,8 @@ void test_history() {
     TEST_CHECK(h.Count() == 3);
     TEST_CHECK(h[0] == r_A);
     TEST_CHECK(h[2] == r_C);
-    TEST_CHECK(h[1].ToString() == "{{17.7400, 8}, {12.C259, 13}}");
-    TEST_CHECK(h[2].ToString() == "{{F.F000, 16}, {21.6364, 7}}");
+    TEST_CHECK(h[1].ToString() == "{{17.7400, 8} => {12.C259, 13}}");
+    TEST_CHECK(h[2].ToString() == "{{F.F000, 16} => {21.6364, 7}}");
 
     h.Clear();
     TEST_CHECK(h.Count() == 0);

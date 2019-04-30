@@ -21,14 +21,12 @@
 #include <wx/settings.h>
 #include <wx/textctrl.h>
 #include <wx/stattext.h>
+#include <wx/button.h>
 #include <wx/sizer.h>
 #include <wx/slider.h>
 #include <wx/choice.h>
-#include <wx/button.h>
 #include <wx/statusbr.h>
 #include <wx/frame.h>
-#include <wx/listbox.h>
-#include <wx/dialog.h>
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -48,7 +46,7 @@ class ConverterFrame : public wxFrame
 		wxTextCtrl* m_sourceNumber;
 		wxStaticText* m_staticText1;
 		wxStaticText* m_staticText5;
-		wxStaticText* m_staticText6;
+		wxButton* m_buttonToHistory;
 		wxSlider* m_sourceRadix;
 		wxTextCtrl* m_outputNumber;
 		wxStaticText* m_staticText11;
@@ -86,6 +84,7 @@ class ConverterFrame : public wxFrame
 		virtual void OnAbout( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnSourceNumberTextUpdate( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnSourceNumber( wxCommandEvent& event ) { event.Skip(); }
+		virtual void OnAddToHistory( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnSliderSourceRadix( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnPrecisionChoice( wxCommandEvent& event ) { event.Skip(); }
 		virtual void OnSliderOutputRadix( wxCommandEvent& event ) { event.Skip(); }
@@ -101,23 +100,6 @@ class ConverterFrame : public wxFrame
 		ConverterFrame( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 370,620 ), long style = wxDEFAULT_FRAME_STYLE|wxTAB_TRAVERSAL );
 
 		~ConverterFrame();
-
-};
-
-///////////////////////////////////////////////////////////////////////////////
-/// Class HistoryFrame
-///////////////////////////////////////////////////////////////////////////////
-class HistoryFrame : public wxDialog
-{
-	private:
-
-	protected:
-		wxListBox* m_listBox2;
-
-	public:
-
-		HistoryFrame( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxDEFAULT_DIALOG_STYLE );
-		~HistoryFrame();
 
 };
 

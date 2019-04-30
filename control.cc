@@ -11,10 +11,6 @@ namespace NCtrl {
     using NEditor::invalid_digit;
     using NPNumber::TPNumber;
 
-    enum struct TState { Editing,
-                         Converted,
-                         Error };
-
     class TCtrl {
     public:
         explicit TCtrl() {
@@ -95,15 +91,28 @@ namespace NCtrl {
             return number.ToString();
         }
 
+        void AddToHistory() {
+            history.AddRecord(radixIn, number.GetRadix(), editor.Get(), number.ToString());
+        }
+
+        NHistory::Record SetFromHistory(int idx) {
+            auto r = history[idx];
+            SetSourceRadix(r.radix1);
+            SetOutputRadix(r.radix2);
+            ReSetNumber(r.number1);
+            return r;
+        }
+
+        std::vector<std::string> GetHistory() {
+            return history.Get();
+        }
+
     private:
-        //TState state = TState::Editing;
         int radixIn = 10;
 
         TPNumber number;
         NEditor::TEditor editor;
         NHistory::THistory history;
-        NMemory::TMemory memory;
-        NProc::TProc proc;
     };
 }; // namespace NCtrl
 

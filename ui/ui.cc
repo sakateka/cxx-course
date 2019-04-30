@@ -5,6 +5,7 @@
 #include <iostream>
 #include <wx/log.h>
 #include <wx/msgdlg.h>
+#include "wx/choicdlg.h"
 
 #include "converter.h"
 #include "../control.cc"
@@ -24,7 +25,34 @@ public:
     }
 
     void OnHistory(wxCommandEvent& event) {
+        wxLogDebug("Click Menu History");
+        wxArrayString choices;
+        for (auto& i : Control.GetHistory()) {
+            choices.Add(i);
+        }
+
+        wxSingleChoiceDialog dialog(this,
+                                    wxT("Conversion history"),
+                                    wxT("Please select a value"),
+                                    choices);
+
+        if (dialog.ShowModal() == wxID_OK) {
+            int idx = dialog.GetSelection();
+            auto sel = Control.SetFromHistory(idx);
+            wxLogDebug("Set item from history: %s", sel.ToString());
+
+            m_sourceRadix->SetValue(sel.radix1);
+            m_outputRadix->SetValue(sel.radix2);
+            m_sourceNumber->ChangeValue(sel.number1);
+            m_outputNumber->ChangeValue(sel.number2);
+            UpdateControls(sel.radix1);
+            OnSourceNumber(event);
+        }
+    }
+
+    void OnAddToHistory(wxCommandEvent& event) {
         wxLogDebug("Click History");
+        Control.AddToHistory();
     }
 
     void OnSourceNumber(wxCommandEvent& event) {
@@ -114,6 +142,8 @@ public:
             Control.AddDigit(n);
         } catch (NCtrl::invalid_digit& e) {
             wxLogDebug("Invalid char '%c': %s", n, e.what());
+        } catch (std::exception& e) {
+            wxLogDebug("Unexpected exception from AddDigit for '%c': %s", n, e.what());
         }
         m_sourceNumber->ChangeValue(Control.GetSourceNumberAsStr());
         OnSourceNumber(event);

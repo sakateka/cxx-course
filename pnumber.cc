@@ -206,28 +206,40 @@ namespace NPNumber {
             _doCarry = v;
         }
 
-        static long double ParseNumber(const std::string& ns, int base) {
+        static long double ParseNumber(const std::string& number_, int base) {
+            if (number_.empty()) {
+                return 0;
+            }
             char* nend;
+            size_t sign = 0;
+            std::string ns = number_;
+            if (ns[0] == NConst::MINUS) {
+                ns = ns.substr(1);
+                sign = 1;
+            }
+            if (ns.empty()) {
+                return 0;
+            }
             long double n = strtoll(ns.c_str(), &nend, base);
             if (*nend == '.' && *(++nend) != '\0') {
                 char* dot = nend;
                 long double fractional = strtoll(nend, &nend, base);
                 if (*nend == '\0') {
                     fractional /= (long double)pow((long)base, nend - dot);
-                    if (n < 0) { // negative number, so fraction too
-                        fractional = -fractional;
-                    }
                     n += fractional;
                 }
             }
             if (*nend != '\0') {
                 throw invalid_pnumber(ns);
             }
+            if (sign) {
+                n = -n;
+            }
             return n;
         }
 
         static int ParseRadix(const std::string& rs) {
-            if (rs.size() > 0 && rs[0] != '-') {
+            if (!rs.empty() && rs[0] != '-') {
                 char* nend;
                 int r = strtol(rs.c_str(), &nend, 10);
                 if (*nend == '\0') {
@@ -239,7 +251,7 @@ namespace NPNumber {
         };
 
         static int ParsePrecision(const std::string& ps) {
-            if (ps.size() > 0 && ps[0] != '-') {
+            if (!ps.empty() && ps[0] != '-') {
                 char* nend;
                 int p = strtol(ps.c_str(), &nend, 10);
                 if (*nend == '\0') {
@@ -352,14 +364,14 @@ void test_pnumber_constructor() {
     {
         TPNumber p = TPNumber(-17.875, 16, 3); // base16 - -А1.Е
         if (not TEST_CHECK(p.GetNumber() == -17.875)) {
-            TEST_MSG("GetNumber() == %.1lf", p.GetNumber());
+            TEST_MSG("GetNumber() == %.1Lf", p.GetNumber());
         }
     }
     TEST_CASE("ConstructorString");
     {
         TPNumber p = TPNumber("11", "2", "3");
         if (not TEST_CHECK(p.GetNumber() == 3.0)) {
-            TEST_MSG("GetNumber() == %.1lf", p.GetNumber());
+            TEST_MSG("GetNumber() == %.1Lf", p.GetNumber());
         }
         TEST_CHECK(p.GetRadixAsStr() == "2");
         TEST_CHECK(p.GetPrecisionAsStr() == "3");
@@ -368,23 +380,23 @@ void test_pnumber_constructor() {
     TEST_CASE("ConstructorString with fractional part");
     {
         TPNumber p = TPNumber("11.11", "2", "3");
-        if (not TEST_CHECK(p.GetNumber() == 3.75)) {
-            TEST_MSG("GetNumber() == %lf", p.GetNumber());
-        }
+        TEST_CHECK_(p.GetNumber() == 3.75, "%Lf == %Lf", p.GetNumber(), 3.75);
+        p = TPNumber(".11", "2", "3");
+        TEST_CHECK_(p.GetNumber() == 0.75, "%Lf == %Lf", p.GetNumber(), 0.75);
     }
     TEST_CASE("ConstructorString number ends with dot");
     {
         TPNumber p = TPNumber("100.", "2", "3");
-        if (not TEST_CHECK(p.GetNumber() == 4.0)) {
-            TEST_MSG("GetNumber() == %.1lf", p.GetNumber());
-        }
+        TEST_CHECK_(p.GetNumber() == 4.0, "%.1Lf == %.1Lf", p.GetNumber(), 4.0);
     }
     TEST_CASE("ConstructorString negative number");
     {
         TPNumber p = TPNumber("-f", "16", "3");
-        if (not TEST_CHECK(p.GetNumber() == -15.0)) {
-            TEST_MSG("GetNumber() == %.1lf", p.GetNumber());
-        }
+        TEST_CHECK_(p.GetNumber() == -15.0, "%.1Lf == %.1Lf", p.GetNumber(), -15.0);
+
+        TPNumber p2("-.f", "16", "3");
+        long double expect = -0.9375;
+        TEST_CHECK_(p2.GetNumber() == expect, "%.2Lf == %.2Lf", p2.GetNumber(), expect);
     }
     TEST_CASE("ConstructorString autodetect precision");
     {
@@ -485,7 +497,7 @@ void test_pnumber_to_string() {
         TEST_CASE("TPNumber from string");
         TPNumber p = TPNumber("-A1.E", "16", "3");
         long double expect = -161.875;
-        TEST_CHECK_(p.GetNumber() == expect, "%f == %f", p.GetNumber(), expect);
+        TEST_CHECK_(p.GetNumber() == expect, "%Lf == %Lf", p.GetNumber(), expect);
     }
     {
         TEST_CASE("TPNumber to valid string");
